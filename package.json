@@ -1,0 +1,31 @@
+{
+  "name": "api-server",
+  "version": "1.0.0",
+  "description": "Health map about Guayaquil City",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/health-map/API-server.git"
+  },
+  "keywords": [
+    "HealthMap",
+    "Guayaquil",
+    "health",
+    "map",
+    "weather",
+    "transit",
+    "salud",
+    "clima"
+  ],
+  "author": "Leonardo Kuffo <lkuffo@espol.edu.ec>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/health-map/API-server/issues"
+  },
+  "homepage": "https://github.com/health-map/API-server#readme"
+}
