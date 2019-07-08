@@ -26,6 +26,22 @@ services:
     - postgres
    networks:
     - healthmap-net
+ datalistener:
+   build: .
+   volumes:
+    - .:/datalistener
+    - node_modules:/datalistener/node_modules
+   ports:
+    - "8020:8020"
+    - "9001:9001"
+   environment:
+    - SERVER_HOST_NAME=http://127.0.0.1
+   links:
+    - job-queue
+    - redis
+    - postgres
+   networks:
+    - healthmap-net
  redis:
    image: redis
    volumes:
