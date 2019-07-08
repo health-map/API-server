@@ -17,23 +17,8 @@ services:
     - node_modules:/api/node_modules
    ports:
     - "8020:8020"
+    - "8021:8021"
     - "9001:9001"
-   environment:
-    - SERVER_HOST_NAME=http://127.0.0.1
-   links:
-    - job-queue
-    - redis
-    - postgres
-   networks:
-    - healthmap-net
- datalistener:
-   build: .
-   volumes:
-    - .:/datalistener
-    - node_modules:/datalistener/node_modules
-   ports:
-    - "3030:3030"
-    - "9003:9003"
    environment:
     - SERVER_HOST_NAME=http://127.0.0.1
    links:
