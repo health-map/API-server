@@ -32,8 +32,8 @@ services:
     - .:/datalistener
     - node_modules:/datalistener/node_modules
    ports:
-    - "8020:8020"
-    - "9001:9001"
+    - "3030:3030"
+    - "9003:9003"
    environment:
     - SERVER_HOST_NAME=http://127.0.0.1
    links:
