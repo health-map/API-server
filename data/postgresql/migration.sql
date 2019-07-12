@@ -1,0 +1,4 @@
+--
+-- Migration 
+-- Queries for inserting old data into new structure
+--
