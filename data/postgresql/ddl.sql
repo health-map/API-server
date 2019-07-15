@@ -107,14 +107,14 @@ CREATE INDEX idx_updated_at_disease ON disease USING btree (updated_at);
 
 CREATE TABLE disease_aggregation (
     id SERIAL,
-    aggregation integer NOT NULL,
+    aggregation_id integer NOT NULL,
     disease_id integer NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     enabled boolean NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id)
 );
-CREATE INDEX idx_aggregation_disease ON disease_aggregation USING btree (aggregation);
+CREATE INDEX idx_aggregation_disease ON disease_aggregation USING btree (aggregation_id);
 CREATE INDEX idx_aggregation_disease_agg ON disease_aggregation USING btree (id);
 CREATE INDEX idx_updated_at_disease_agg ON disease_aggregation USING btree (updated_at);
 CREATE INDEX idx_enabled_disease_agg ON disease_aggregation USING btree (enabled);
@@ -311,7 +311,7 @@ ALTER TABLE ONLY aggregation
     ADD CONSTRAINT fk_agg_type FOREIGN KEY (aggregation_type) REFERENCES aggregation_type(id);
 
 ALTER TABLE ONLY disease_aggregation
-    ADD CONSTRAINT fk_aggregation FOREIGN KEY (aggregation) REFERENCES aggregation(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_aggregation FOREIGN KEY (aggregation_id) REFERENCES aggregation(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY disease_aggregation
     ADD CONSTRAINT fk_agg_disease FOREIGN KEY (disease_id) REFERENCES disease(id) ON DELETE CASCADE;
