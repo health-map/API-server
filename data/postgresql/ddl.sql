@@ -268,7 +268,7 @@ CREATE TABLE user_role (
     id SERIAL,
     name VARCHAR(20) NOT NULL,
     privacy_level INTEGER NOT NULL DEFAULT 0,
-    updated_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_prv_lev_user_role ON user_role USING hash (privacy_level);

@@ -1,0 +1,1 @@
+# Migration Script to generate some queries of migration.sql
