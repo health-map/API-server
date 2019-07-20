@@ -13,6 +13,20 @@
 -- CREATE DATABASE healthmap;
 -- COMMENT ON DATABASE healthmap IS 'Guayaquil Health Map database';
 CREATE SCHEMA IF NOT EXISTS healthmap;
+CREATE extension postgis;
+
+UPDATE pg_extension 
+  SET extrelocatable = TRUE 
+    WHERE extname = 'postgis';
+ 
+ALTER EXTENSION postgis 
+  SET SCHEMA healthmap;
+ 
+ALTER EXTENSION postgis 
+  UPDATE TO "2.5.2next";
+ 
+ALTER EXTENSION postgis 
+  UPDATE TO "2.5.2";
 
 SET search_path TO healthmap;
 
@@ -126,7 +140,7 @@ CREATE TABLE geofence (
     id SERIAL,
     name VARCHAR(50) NOT NULL,
     description text,
-    polygon polygon NOT NULL,
+    polygon GEOMETRY NOT NULL,
     parent_geofence_id integer,
     granularity_level integer,
     city_id integer,
@@ -142,6 +156,7 @@ CREATE INDEX idx_created_at_geofence ON geofence USING btree (created_at);
 CREATE INDEX idx_gran_level_geofence ON geofence USING btree (granularity_level);
 CREATE INDEX idx_city_id_geofence ON geofence USING btree (city_id);
 CREATE INDEX idx_parent_geofence_id ON geofence USING btree (parent_geofence_id);
+CREATE INDEX idx_polygon_geofence ON geofence USING GIST (polygon);
 CREATE UNIQUE INDEX idx_id_geofence ON geofence USING btree (id);
 
 

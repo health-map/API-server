@@ -38,7 +38,7 @@ services:
     - healthmap-net
    command: redis-server /usr/local/etc/redis/redis.conf
  postgres:
-   image: postgres:10.9
+   image: mdillon/postgis:10
    environment:
     - POSTGRES_USER=root
     - POSTGRES_PASSWORD=dev

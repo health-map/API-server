@@ -1,9 +1,10 @@
 # coding=utf-8
 # Migration Script to generate some queries of migration.sql
 import pandas as pd
+import json
 
 
-generate = "DISEASE_AGGREGATION"
+generate = "GEOFENCES"
 
 if generate == "AGGREGATION":
   agg_capitulos = pd.read_csv("./raw_data/capitulos.csv")
@@ -72,6 +73,56 @@ elif generate == "DISEASE_AGGREGATION":
           #print "(" + str(aggregation_index) + ", " + str(disease_index) + "),"
           f.write("(" + str(aggregation_index) + ", " + str(disease_index) + "),\n")
     disease_index += 1
+  f.close()
+
+elif generate == "GEOFENCES":
+  f = open("./generator_output.csv", "w")
+  ids_mapping = []
+  with open('./raw_data/geofences/gye_general.geojson') as geo_gye_general:
+    city_geo = json.load(geo_gye_general)
+
+  with open('./raw_data/geofences/parroquias_urbanas.geojson') as geo_gye_parr:
+    parr_geo = json.load(geo_gye_parr)
+
+  with open('./raw_data/geofences/sectors.geojson') as geo_gye_sectors:
+    sectors_geo = json.load(geo_gye_sectors)
+
+  current_id = 1
+  f.write('INSERT INTO healthmap.geofence\n') 
+  f.write('\t("name", description, polygon, parent_geofence_id, granularity_level, city_id, geo_tag, population)\nVALUES\n')
+  # ST_GeometryFromText('POLYGON((50.6373 3.0750,50.6374 3.0750,50.6374 3.0749,50.63 3.07491,50.6373 3.0750))')
+  # ("name", description, polygon, parent_geofence_id, granularity_level, city_id, geo_tag, population)
+  # granularity: 5, parent: NULL, city: 1
+  for feature in city_geo['features']:
+    if feature['properties']['dpa_tipo'] == "CAPITAL PROVINCIAL": #guayaquil city
+      polygon = ''
+      for i, c in enumerate(feature['geometry']['coordinates']):
+        for coord, (lat, lon) in enumerate(c[0]):
+          polygon = polygon + str(lat) + ' ' + str(lon)
+          if (coord != len(c[0]) - 1):
+            polygon += ', '
+        f.write("('GUAYAQUIL', 'Ciudad de Guayaquil', ST_GeometryFromText('POLYGON((" + polygon  +  "))'), NULL, 5, 1, NULL, 2644891), \n")
+        ids_mapping.append({
+          'id': current_id,
+          'name': 'GUAYAQUIL'
+        })
+        current_id += 1
+  
+  # granularity: 6, parent: 1, city: 1
+  for feature in parr_geo['features']:
+    polygon = ''
+    name = feature['properties']['parroquia_']
+    for i, c in enumerate(feature['geometry']['coordinates']):
+      for coord, (lat, lon) in enumerate(c[0]):
+        polygon = polygon + str(lat) + ' ' + str(lon)
+        if (coord != len(c[0]) - 1):
+          polygon += ', '
+      f.write("('" + name + "', 'Parroquia Urbana " + name +  " ', ST_GeometryFromText('POLYGON((" + polygon  +  "))'), 1, 6, 1, NULL, 0), \n")
+      ids_mapping.append({
+        'id': current_id,
+        'name': name
+      })
+      current_id +=1 
   f.close()
 
 else:

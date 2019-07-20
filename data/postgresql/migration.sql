@@ -42580,6 +42580,24 @@ VALUES
 --
 -- GEOFENCE
 --
+-- Granularity:
+-- Mundo:               0
+-- Continente:          1
+-- Pais:                2
+-- Region:              3
+-- Provincia/Estado:    4
+-- Ciudad:              5
+-- Parroquia/Comuna:    6
+-- Sector/MacroBarrio:  7
+-- Barrio:              8
+--
+
+INSERT INTO 
+  geofence ("name", description, polygon, parent_geofence_id, granularity_level, city_id, geo_tag, population)
+VALUES
+  ('Guayaquil', 'Ciudad de Guayaquil', 'polygon', NULL, 5, 1, NULL, 2644891);
+
+
 
 --
 --
