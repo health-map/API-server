@@ -34,7 +34,7 @@ CREATE TABLE aggregation (
     id SERIAL,
     privacy_level integer NOT NULL DEFAULT 0,
     aggregation_type integer NOT NULL,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(500) NOT NULL,
     description text,
     geo_tag integer,
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
@@ -86,6 +86,7 @@ CREATE TABLE department (
     institution_id integer NOT NULL,
     city_id integer NOT NULL,
     name VARCHAR(50) NOT NULL,
+    website VARCHAR(100),
     description text,
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
@@ -105,7 +106,7 @@ CREATE TABLE disease (
     cie10_code VARCHAR(20) NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
     description text,
-    name VARCHAR(200) NOT NULL,
+    name VARCHAR(1000) NOT NULL,
     privacy_level integer NOT NULL DEFAULT 0,
     updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     enabled boolean NOT NULL DEFAULT TRUE,
@@ -138,14 +139,14 @@ CREATE INDEX idx_created_at_disease_agg ON disease_aggregation USING btree (crea
 
 CREATE TABLE geofence (
     id SERIAL,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
     description text,
     polygon GEOMETRY NOT NULL,
     parent_geofence_id integer,
     granularity_level integer,
     city_id integer,
     geo_tag integer,
-    population integer,
+    population integer DEFAULT 1000,
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)
@@ -178,12 +179,13 @@ CREATE INDEX idx_updated_at_geofences_groups ON geofences_groups USING btree (up
 CREATE TABLE institution (
     id SERIAL,
     city_id integer NOT NULL,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
     description text,
+    website VARCHAR(200),
     created_at timestamp with time zone NOT NULL DEFAULT NOW(),
     updated_at timestamp with time zone NOT NULL DEFAULT NOW(),
     enabled boolean NOT NULL DEFAULT TRUE,
-    location point NOT NULL,
+    location GEOMETRY NOT NULL,
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_updated_at_institution ON institution USING btree (updated_at);
@@ -311,14 +313,16 @@ CREATE TABLE city_place (
     id SERIAL,
     city_id integer NOT NULL,
     related_geofence integer,
-    related_geofence_name VARCHAR(50),
-    specific_name VARCHAR (100),
-    secondary_name VARCHAR(50),
-    alternative_name VARCHAR(50),
+    related_geofence_name VARCHAR(100),
+    "type" VARCHAR(20) NOT NULL DEFAULT 'place',  -- can be 'intersection' or 'place'
+    place_name VARCHAR (200) NOT NULL,
+    location GEOMETRY DEFAULT NULL, -- if intersection, then geometry is a the point
     PRIMARY KEY (id)
 );
 CREATE INDEX idx_geofence_id_city_place ON city_place USING btree (related_geofence);
 CREATE INDEX idx_id_city_place ON city_place USING btree (id);
+CREATE INDEX idx_type_city_place ON city_place USING btree ("type");
+CREATE INDEX idx_place_name_city_place ON city_place USING btree (place_name);
 CREATE INDEX idx_geofence_name_city_place ON city_place USING btree (related_geofence_name);
 CREATE INDEX idx_cit_id_city_places ON city_place USING btree (city_id);
 

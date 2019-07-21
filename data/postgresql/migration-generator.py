@@ -2,16 +2,18 @@
 # Migration Script to generate some queries of migration.sql
 import pandas as pd
 import json
-
+import sys  
+reload(sys)  
+sys.setdefaultencoding('utf8')
 
 generate = "GEOFENCES"
 
 if generate == "AGGREGATION":
-  agg_capitulos = pd.read_csv("./raw_data/capitulos.csv")
-  agg_agrup = pd.read_csv("./raw_data/agrupaciones.csv")
+  agg_capitulos = pd.read_csv("./raw_data/diseases/capitulos.csv")
+  agg_agrup = pd.read_csv("./raw_data/diseases/agrupaciones.csv")
 
   for index, row in agg_capitulos.iterrows():
-    print "(0, 0, '" + row["name"] + "','Capítulo " + str(row["index"]) + ": " + row["descripcion"] + "', 0, TRUE),"
+    print "(0, 1, '" + row["name"] + "','Capítulo " + str(row["index"]) + ": " + row["descripcion"] + "', NULL, TRUE),"
 
   subcapitulo = 0
   cap_actual = -1
@@ -19,7 +21,7 @@ if generate == "AGGREGATION":
     if cap_actual != row["cap"]:
       subcapitulo = 1
       cap_actual = row["cap"]
-    print "(0, 1, '" + row["name"] + "','Capítulo " + str(row["cap"]) + "." + str(subcapitulo) + ": " + row["cods"]  + "', 0, TRUE),"
+    print "(0, 2, '" + row["name"] + "','Capítulo " + str(row["cap"]) + "." + str(subcapitulo) + ": " + row["cods"]  + "', NULL, TRUE),"
     subcapitulo += 1
 
 elif generate == "DISEASE":
@@ -102,6 +104,7 @@ elif generate == "GEOFENCES":
           if (coord != len(c[0]) - 1):
             polygon += ', '
         f.write("('GUAYAQUIL', 'Ciudad de Guayaquil', ST_GeometryFromText('POLYGON((" + polygon  +  "))'), NULL, 5, 1, NULL, 2644891), \n")
+        print current_id, "('GUAYAQUIL', 'Ciudad de Guayaquil', ST_GeometryFromText('POLYGON(())'), NULL, 5, 1, NULL, 2644891),"
         ids_mapping.append({
           'id': current_id,
           'name': 'GUAYAQUIL'
@@ -118,11 +121,67 @@ elif generate == "GEOFENCES":
         if (coord != len(c[0]) - 1):
           polygon += ', '
       f.write("('" + name + "', 'Parroquia Urbana " + name +  " ', ST_GeometryFromText('POLYGON((" + polygon  +  "))'), 1, 6, 1, NULL, 0), \n")
+      print current_id, "('" + name + "', 'Parroquia Urbana " + name +  " ', ST_GeometryFromText('POLYGON(())'), 1, 6, 1, NULL, 0),"
       ids_mapping.append({
         'id': current_id,
         'name': name
       })
       current_id +=1 
+
+  # granularity: 7, parent: SEARCH, city: 1
+  for feature in sectors_geo['features']:
+    polygon = ''
+    if 'Name' not in feature['properties']:
+      continue
+    name = feature['properties']['Name'].encode('utf-8').upper()
+    if name == '':
+      continue
+    found_parent_id = 'NULL'
+    parent = 'NULL'
+    if 'parent' in feature['properties']:
+      parent = feature['properties']['parent']
+      found_parent_ids = [x for x in ids_mapping if x['name'] == parent]
+      if len(found_parent_ids) >= 1:
+        found_parent_id = found_parent_ids[0]['id']
+    for i, c in enumerate(feature['geometry']['coordinates']):
+      for coord, (lat, lon) in enumerate(c):
+        polygon = polygon + str(lat) + ' ' + str(lon)
+        if (coord != len(c) - 1):
+          polygon += ', '
+      f.write("('" + name + "', 'Sector " + name +  "', ST_GeometryFromText('POLYGON((" + polygon  +  "))'), " + str(found_parent_id) + ", 7, 1, NULL, 0), \n")
+      print current_id, parent, "('" + name + "', 'Sector " + name + "', " + str(found_parent_id) + ", 7, 1, NULL, 0),"
+
+      ids_mapping.append({
+        'id': current_id,
+        'name': name
+      })
+      current_id +=1 
+
+
+  f.write('INSERT INTO healthmap.city_place\n') 
+  f.write('\t(city_id, related_geofence_name, related_geofence, "type", place_name, location)\nVALUES\n')
+  geo_city_places = pd.read_csv('./raw_data/city_places/city_place.csv')
+  for i, city_place in geo_city_places.iterrows():
+    place_name = city_place["Sector"]
+    related_geofence_name = city_place["SectorShapeName"]
+    related_geofence_id = None
+    for geofence in ids_mapping:
+      if geofence['name'] == related_geofence_name:
+        related_geofence_id = geofence['id']
+        break
+    if related_geofence_id == None:
+      print 'not found', related_geofence_name
+    f.write("(1, '" + related_geofence_name +  "', " + str(related_geofence_id)  +  ", 'place', '" + place_name + "' , NULL), \n")
+
+  #NAME;SIMPLESPEL;DISTRICTCO;ALIAS;lon;lat
+  geo_city_intersections = pd.read_csv('./raw_data/city_places/city_intersections.csv', sep=";")
+  for i, city_intersection in geo_city_intersections.iterrows():
+    place_name = city_intersection['SIMPLESPEL'].replace("'", "")
+    lat = float(city_intersection['lat'].replace(',', '.'))
+    lon = float(city_intersection['lon'].replace(',', '.'))
+    if (lon < -79.84725952148438 and lon > -80.10475158691406
+      and lat > -2.2962143085146574 and lat < -1.99910598312332):
+      f.write("(1, NULL, NULL, 'intersection', '" + place_name + "' , ST_GeometryFromText('POINT("+ str(lon) + " " +  str(lat) +  ")')), \n")
   f.close()
 
 else:
