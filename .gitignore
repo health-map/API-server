@@ -1,0 +1,6 @@
+.DS_Store
+data/.DS_Store
+data/kue/shippify.rdb
+data/postgresql/.DS_Store
+data/redis/shippify.rdb
+
