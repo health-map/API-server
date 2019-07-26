@@ -63,4 +63,4 @@ postg.querySlave =(sqlString, values, callback) => {
 }
 
 
-module.exports = mysql
+module.exports = postg
