@@ -21,6 +21,14 @@ services:
     - "9001:9001"
    environment:
     - SERVER_HOST_NAME=http://127.0.0.1
+    - JOB_QUEUE_HOST=job-queue:3030
+    - JOB_QUEUE_USERNAME=map
+    - JOB_QUEUE_PASSWORD=dev
+    - POSTGRES_HOST=postgres
+    - POSTGRES_PORT=5432
+    - POSTGRES_USER=root
+    - POSTGRES_PASS=dev
+    - POSTGRES_DB=healthmap
    links:
     - job-queue
     - redis
