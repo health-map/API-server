@@ -66,6 +66,7 @@ if(cluster.isMaster) {
           return res.status(400).send('Malformat json');
         }
         next();
+
     });
 
     // language
@@ -78,9 +79,6 @@ if(cluster.isMaster) {
     app.engine('ejs', engine);
 
     app.set('port', process.env.SERVER_PORT || 8020);
-
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'ejs');
 
     app.use(expressLayouts);
 

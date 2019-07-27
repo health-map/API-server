@@ -1,5 +1,6 @@
 const request = require('request');
 const postg = require('./../../db/postgre');
+const redis = require('./../../db/redis');
 
 class Job{
 

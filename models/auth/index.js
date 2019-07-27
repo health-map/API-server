@@ -33,6 +33,8 @@ class Auth {
   static verify(authObj, cb) {
 
     const apiKey = `apikeys:api_id:${authObj.username}`;
+
+    console.log('apiKey:',apiKey)
     redis.connect()
     .hgetall(apiKey, (error, result)=>{
 
@@ -46,7 +48,7 @@ class Auth {
         if(error){
           return cb(error);
         }
-        if(!resp){
+        if(!result){
           return cb(new Error(`Not found the key`))
         }
 
@@ -54,7 +56,7 @@ class Auth {
           return cb(new Error("Wrong secret key"));
         }
 
-        cb(null, resp);
+        cb(null, result);
       });
   }
 }

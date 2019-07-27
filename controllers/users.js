@@ -7,7 +7,7 @@ const authAPI = require('../middlewares/auth');
 const langMiddleware = require('../middlewares/lang');
 
 
-router.post('/login', authAPI, langMiddleware, (req, res) => {  
+router.post('/login', (req, res) => {  
 
     const { 
         email,

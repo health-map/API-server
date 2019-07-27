@@ -27,7 +27,7 @@ module.exports = (request, response, next)=>{
   Auth.verify(authObj, (error, verifiedData)=>{
 
       if(error){
-        console.log("redis not auth ",verifyError)
+        console.log("redis not auth ",error)
         return unauthorized(response);
       }
 

@@ -29,6 +29,8 @@ services:
     - POSTGRES_USER=root
     - POSTGRES_PASS=dev
     - POSTGRES_DB=healthmap
+    - REDIS_HOST=redis
+    - REDIS_PORT=6379
    links:
     - job-queue
     - redis

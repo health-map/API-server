@@ -1,5 +1,5 @@
 const postg = require('../../db/postgre');
-const redis = require('./../db/redis');
+const redis = require('./../../db/redis');
 class Disease{
 
     static getDiseases(options, cb) {
@@ -7,7 +7,7 @@ class Disease{
         //TODO the query need to check it with the filters.
         const query = `SELECT * FROM disease `
 
-        postg.querySlave(query, (error, diseases)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -16,6 +16,8 @@ class Disease{
                     message: 'Unknow error'
                 });
             }
+
+            const diseases = results.rows;
 
             cb(null, {
                 statusCode: 200,

@@ -13,9 +13,9 @@ class Geofence{
         const where = [];
 
         //TODO the query need to check it with the filters.
-        const query = `SELECT * FROM geofence `
+        const query = `SELECT * FROM healthmap.geofence `
 
-        postg.querySlave(query, (error, geofences)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -25,6 +25,7 @@ class Geofence{
                 });
             }
 
+            const geofences = results.rows;
             cb(null, {
                 statusCode: 200,
                 code: 'OK',

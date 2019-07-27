@@ -1,5 +1,5 @@
 const postg = require('../../db/postgre');
-const redis = require('./../db/redis');
+const redis = require('./../../db/redis');
 class Institution{
 
     static getInstitutions(options, cb) {
@@ -7,7 +7,7 @@ class Institution{
         //TODO the query need to check it with the filters.
         const query = `SELECT * FROM institution `
 
-        postg.querySlave(query, (error, institutions)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -16,6 +16,8 @@ class Institution{
                     message: 'Unknow error'
                 });
             }
+
+            const incidences = results.rows;
 
             cb(null, {
                 statusCode: 200,

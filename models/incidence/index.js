@@ -1,5 +1,5 @@
 const postg = require('./../../db/postgre');
-const redis = require('./../db/redis');
+const redis = require('./../../db/redis');
 class Incidence{
 
     static getIncidences(options, cb) {
@@ -24,7 +24,7 @@ class Incidence{
         //TODO the query need to check it with the filters.
         const query = `SELECT * FROM incidence `
 
-        postg.querySlave(query, (error, incidences)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -33,6 +33,8 @@ class Incidence{
                     message: 'Unknow error'
                 });
             }
+
+            const incidences = results.rows;
 
             cb(null, {
                 statusCode: 200,

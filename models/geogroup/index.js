@@ -27,7 +27,7 @@ class Geogroup{
         //TODO the query need to check it with the filters.
         const query = `SELECT * FROM geofence_group `
 
-        postg.querySlave(query, (error, geogroups)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -36,6 +36,8 @@ class Geogroup{
                     message: 'Unknow error'
                 });
             }
+
+            const geogroups = results.rows;
 
             cb(null, {
                 statusCode: 200,

@@ -16,8 +16,8 @@ const configurations = {
   master: {
     host, port, user, password, database
   },
-  slaves: {
-    slaveHost, slavePort, slaveUser, slavePassword, slaveDatabase
+  slave: {
+    host: slaveHost, port: slavePort, user: slaveUser, password: slavePassword, database: slaveDatabase
   }
 }
 
