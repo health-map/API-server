@@ -32,12 +32,12 @@ if(cluster.isMaster) {
     , multipart = require('connect-multiparty')
     , multipartMiddleware = multipart();
 
-    let favicon = require('serve-favicon');
+    let app = express();
+
+    let debug = require("express-debug");
 
     let cookieParser = require('cookie-parser');
     app.use(cookieParser());
-
-    app.use(favicon(__dirname + '/public/images/favicon.ico'));
 
     let session = require('express-session');
     let RedisStore = require('connect-redis')(session);
@@ -141,6 +141,7 @@ if(cluster.isMaster) {
     app.use('/geogroups',require('./controllers/geogroups'));
     app.use('/diseases',require('./controllers/diseases'));
     app.use('/institutions',require('./controllers/institutions'));
+    app.use('/users',require('./controllers/users'));
     app.use('/age',require('./controllers/ages'));
 
 

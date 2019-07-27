@@ -9,7 +9,7 @@ So far we have
 - JWT
 */
 
-const redis = require('./../db/redis');
+const redis = require('./../../db/redis');
 
 class Auth {
 
@@ -17,9 +17,22 @@ class Auth {
     Usage:
     authObj = {username, password}
   */
+
+  static saveUser(user, cb){
+    const apiKey = `apikeys:api_id:${user.api_id}`;
+    redis.connect()
+    .hmset(apiKey, user, (error, result)=>{
+      if(error){
+        console.log('ERROR:',error);
+        return cb(new Error(`Error saving credentials`))
+      }
+      cb(null);
+    });
+  }
+
   static verify(authObj, cb) {
 
-    const apiKey = `apikeys:id:${authObj.username}`;
+    const apiKey = `apikeys:api_id:${authObj.username}`;
     redis.connect()
     .hgetall(apiKey, (error, result)=>{
 
