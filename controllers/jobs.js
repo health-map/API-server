@@ -1,5 +1,6 @@
 const Express = require('express');
 const router = new Express.Router();
+//TODO: Pending to add a schema validator to validate the format that the data is sent.
 const inspector = require('schema-inspector');
 const Job = require('../models/job');
 const authAPI = require('./../middlewares/auth');
@@ -13,7 +14,7 @@ router.post('/data', authAPI, langMiddleware, (req, res) => {
     if(data){
         return res.status(412).json({
             code: 'PF',
-            message: 'Precondition failed'
+            message: 'Missing [data] param'
         });
     }
 
@@ -39,3 +40,5 @@ router.post('/data', authAPI, langMiddleware, (req, res) => {
         });
     });
 });
+
+module.exports = router

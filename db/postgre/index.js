@@ -2,7 +2,7 @@ const postg = require('pg-pool');
 const { master, slave } = require('./config')
 
 const masterPoolClusterConfiguration = new postg(Object.assign({}, master, {
-  ssl: true,
+  ssl: false,
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
   connectionTimeoutMillis: 1000, // return an error after 1 second if connection could not be established
@@ -10,7 +10,7 @@ const masterPoolClusterConfiguration = new postg(Object.assign({}, master, {
 
 
 const slaveClusterConfiguration = new postg(Object.assign({}, slave, {
-  ssl: true,
+  ssl: false,
   max: 20, // set pool max size to 20
   idleTimeoutMillis: 1000, // close idle clients after 1 second
   connectionTimeoutMillis: 1000, // return an error after 1 second if connection could not be established
@@ -30,7 +30,7 @@ function query(pattern, sql, values, callback) {
     callback = values;
   }
 
-  pattern.connect((err, connection, done) => {
+  pattern.connect((error, connection, done) => {
     done();
     if (error) {
       if(typeof connection !== "undefined"){
@@ -61,6 +61,5 @@ postg.querySlave =(sqlString, values, callback) => {
   console.log("QUERY SLAVE:", sqlString);
   query(ServerName.SLAVE, sqlString, values, callback);
 }
-
 
 module.exports = postg

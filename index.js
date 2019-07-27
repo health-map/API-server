@@ -21,7 +21,6 @@ if(cluster.isMaster) {
     })
 
 }else{
-    const newrelic = require('newrelic')
     const express = require('express')
     , http = require('http')
     , path = require('path')
@@ -135,8 +134,14 @@ if(cluster.isMaster) {
         app.use(redirectSecure);
     }
 
-   // const apiServerRouter = require('./api')
-   // app.use('apiServerRouter')
+    //Endpoints
+    app.use('/jobs',require('./controllers/jobs'));
+    app.use('/incidences',require('./controllers/incidences'));
+    app.use('/geofences',require('./controllers/geofences'));
+    app.use('/geogroups',require('./controllers/geogroups'));
+    app.use('/diseases',require('./controllers/diseases'));
+    app.use('/institutions',require('./controllers/institutions'));
+    app.use('/age',require('./controllers/ages'));
 
 
     // Handle 404

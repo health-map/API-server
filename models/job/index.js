@@ -1,4 +1,5 @@
 const request = require('request');
+const postg = require('./../../db/postgre');
 
 class Job{
 
