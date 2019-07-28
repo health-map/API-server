@@ -6,7 +6,7 @@ class Age{
         //TODO the query need to check it with the filters.
         const query = `SELECT * FROM patient_age `
 
-        postg.querySlave(query, (error, ranges)=>{
+        postg.querySlave(query, (error, results)=>{
             if(error){
                 console.log('ERROR:',error);
                 return cb({
@@ -15,6 +15,8 @@ class Age{
                     message: 'Unknow error'
                 });
             }
+
+            const ranges = results.rows;
 
             cb(null, {
                 statusCode: 200,

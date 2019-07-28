@@ -13,7 +13,21 @@ class Geofence{
         const where = [];
 
         //TODO the query need to check it with the filters.
-        const query = `SELECT * FROM healthmap.geofence `
+        const query = `
+        SELECT 
+            ge.id as id,
+            ge.name as name,
+            ge.description as description,
+            ST_AsGeoJSON(ge.polygon) as polygon,
+            ge.parent_geofence_id as parent_geofence_id,
+            ge.granularity_level as granularity_level,
+            ge.city_id as city_id,
+            ge.geo_tag as geo_tag,
+            ge.population as population,
+            ge.created_at as created_at,
+            ge.updated_at as updated_at
+        FROM 
+            healthmap.geofence ge `
 
         postg.querySlave(query, (error, results)=>{
             if(error){
@@ -25,7 +39,11 @@ class Geofence{
                 });
             }
 
-            const geofences = results.rows;
+            console.log('POLYGON:',results)
+            const geofences = results.rows.map((row)=>{
+                return Object.assign({}, row, { polygon: JSON.parse(row.polygon) })
+            });
+
             cb(null, {
                 statusCode: 200,
                 code: 'OK',

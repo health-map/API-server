@@ -18,14 +18,33 @@ class Geogroup{
     static getGeogroups(options, cb) {
 
         const  { 
-            createBy
+            createdBy
         } = options;
 
 
         const where = [];
 
         //TODO the query need to check it with the filters.
-        const query = `SELECT * FROM geofence_group `
+        const query = `
+        SELECT 
+            ge.id AS id, 
+            ge.privacy_level AS privacy_level, 
+            ge.name AS name, 
+            ge.description AS description, 
+            ge.geo_tag AS geo_tag, 
+            ge.created_by AS created_by, 
+            ge.created_at AS created_at, 
+            ge.updated_at AS updated_at,
+            g.id AS geofence_id,
+            g.name AS geofence_name,
+            ST_AsGeoJSON(g.polygon) AS geofence_polygon,
+            g.granularity_level AS geofence_granularity_level
+        FROM healthmap.geofence_group ge 
+        LEFT JOIN healthmap.geofences_groups geg ON geg.group_id=ge.id
+        LEFT JOIN healthmap.geofence g ON g.id=geg.geofence_id
+        WHERE 
+            ge.created_by=${createdBy} 
+        `
 
         postg.querySlave(query, (error, results)=>{
             if(error){
@@ -37,7 +56,40 @@ class Geogroup{
                 });
             }
 
-            const geogroups = results.rows;
+            const geogroupsObject = results.rows.reduce((geogroups, row)=>{
+                if(row.geofence_id){
+                    const geofence = {
+                        id: row.geofence_id,
+                        name: row.geofence_name,
+                        polygon: row.geofence_polygon?JSON.parse(row.geofence_polygon):[],
+                        granularity_level: row.granularity_level
+                    }
+
+                    if(!geogroups[row.id]){
+                        geogroups[row.id] = {
+                            id: row.id, 
+                            privacy_level: row.privacy_level, 
+                            name: row.name, 
+                            description: row.description, 
+                            geo_tag: row.geo_tag, 
+                            created_by: row.created_by, 
+                            created_at: row.created_at, 
+                            updated_at: row.updated_at,
+                            geofences: []
+                        }
+                    }
+
+                    if(geogroups[row.id]){
+                        geogroups[row.id].geofences.push(geofence)
+                    }
+
+                }
+
+                return geogroups;
+
+            }, {});
+
+            const geogroups = Object.keys(geogroupsObject).map((key)=>geogroupsObject[key]);
 
             cb(null, {
                 statusCode: 200,

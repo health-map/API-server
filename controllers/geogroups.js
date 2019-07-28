@@ -9,16 +9,13 @@ const langMiddleware = require('../middlewares/lang');
 
 router.get('/', authAPI, langMiddleware, (req, res) => {
 
-    const  { 
-        createBy
-    } = req.query;
-  
+    const { id: createdBy } = req.auth;  
 
     const options = {
-        createBy
+        createdBy
     }
 
-    Geogroup.getGeogroups(options,  (error, result) => {
+    Geogroup.getGeogroups(options, (error, result) => {
         if(error){
 
             if(error.statusCode){
