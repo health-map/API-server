@@ -4,3 +4,4 @@ data/kue/shippify.rdb
 data/postgresql/.DS_Store
 data/redis/shippify.rdb
 
+.DS_Store
