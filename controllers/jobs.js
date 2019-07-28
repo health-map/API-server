@@ -14,7 +14,7 @@ router.post('/data', authAPI, langMiddleware, (req, res) => {
 
     const  { data } = req.body;
   
-    if(data){
+    if(!data){
         return res.status(412).json({
             code: 'PF',
             message: 'Missing [data] param'

@@ -20,6 +20,7 @@ class Auth {
 
   static saveUser(user, cb){
     const apiKey = `apikeys:api_id:${user.api_id}`;
+    console.log('KEY:',apiKey)
     redis.connect()
     .hmset(apiKey, user, (error, result)=>{
       if(error){

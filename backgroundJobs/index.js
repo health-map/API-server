@@ -23,6 +23,8 @@ if(cluster.isMaster) {
     })
 
 }else{
+
+    const Curation = require('./models/curation');
     
     const queue = kue.createQueue({
         redis: {
@@ -45,17 +47,19 @@ if(cluster.isMaster) {
         domain.run(() => {
             const data =
             Object.assign(
-                {}, job.data,
+                { data: job.data },
                 { jobId: job.id }
             );
 
-            console.log('DATA:',data);
-
-
-
-
             job.progress(0, 100, {status: 'starting'});
-            done(null, data);
+
+            Curation.process(job.data, 1, job.progress, (error, results)=>{
+                if(error){
+                    return done(error);
+                }
+                done(null, results);
+            })
+            
         });
     });
 }

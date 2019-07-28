@@ -8,8 +8,14 @@ const langMiddleware = require('../middlewares/lang');
 
 
 router.get('/', authAPI, langMiddleware, (req, res) => {
+    const { id: createdBy, privacy_level: privacyLevel } = req.auth;  
 
-    Diseases.getDiseases((error, result) => {
+    const options = {
+        privacyLevel,
+        createdBy
+    }
+
+    Disease.getDiseases(options, (error, result) => {
         if(error){
 
             if(error.statusCode){

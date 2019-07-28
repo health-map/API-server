@@ -34,6 +34,7 @@ services:
     - JOB_QUEUE_REDIS_HOST=job-queue-redis
     - JOB_QUEUE_REDIS_PORT=6379
     - JOB_QUEUE_REDIS_PASSWORD=dev
+    - GOOGLE_DIRECTIONS_API_KEY=AIzaSyBGhvLIKDkKTKmSUyE6EmdQwWu4uz3Fbqc
    links:
     - job-queue
     - redis

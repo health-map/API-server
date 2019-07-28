@@ -4,8 +4,18 @@ class Disease{
 
     static getDiseases(options, cb) {
 
+        const {
+            createdBy,
+            privacyLevel
+        } = options;
         //TODO the query need to check it with the filters.
-        const query = `SELECT * FROM disease `
+        const query = `
+        SELECT 
+            * 
+        FROM 
+            healthmap.disease 
+        WHERE 
+            privacy_level=${privacyLevel} `
 
         postg.querySlave(query, (error, results)=>{
             if(error){

@@ -10,7 +10,24 @@ class User{
             password
         } = options;
         //TODO the query need to check it with the filters.
-        const query = `SELECT * FROM healthmap.user WHERE email='${email}'`
+        const query = `
+        SELECT 
+            u.id as id, 
+            u.role_id as role_id, 
+            u.api_id as api_id, 
+            u.api_token as api_token, 
+            u.first_name as first_name, 
+            u.last_name as last_name, 
+            u.email as email,
+            u.username as username, 
+            u.password as password, 
+            u.created_at as created_at, 
+            u.updated_at as updated_at, 
+            r.name as role_name,
+            r.privacy_level as privacy_level
+        FROM healthmap.user u 
+        LEFT JOIN healthmap.user_role r ON r.id=u.role_id 
+        WHERE email='${email}' `
 
         postg.querySlave(query, (error, results)=>{
             if(error){
