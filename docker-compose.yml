@@ -31,6 +31,9 @@ services:
     - POSTGRES_DB=healthmap
     - REDIS_HOST=redis
     - REDIS_PORT=6379
+    - JOB_QUEUE_REDIS_HOST=job-queue-redis
+    - JOB_QUEUE_REDIS_PORT=6379
+    - JOB_QUEUE_REDIS_PASSWORD=dev
    links:
     - job-queue
     - redis

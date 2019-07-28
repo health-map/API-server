@@ -1,4 +1,3 @@
-const async = require('async');
 const kue = require('kue');
 const cluster = require('cluster');
 
@@ -44,8 +43,19 @@ if(cluster.isMaster) {
         });
 
         domain.run(() => {
-            job.progress(0, 100, {status: 'starting'});
+            const data =
+            Object.assign(
+                {}, job.data,
+                { jobId: job.id }
+            );
 
+            console.log('DATA:',data);
+
+
+
+
+            job.progress(0, 100, {status: 'starting'});
+            done(null, data);
         });
     });
 }

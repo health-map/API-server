@@ -32,9 +32,13 @@ if(cluster.isMaster) {
     , multipart = require('connect-multiparty')
     , multipartMiddleware = multipart();
 
+    const fileUpload = require('express-fileupload');
+
     let app = express();
 
     let debug = require("express-debug");
+
+    // app.use(fileUpload());
 
     let cookieParser = require('cookie-parser');
     app.use(cookieParser());
@@ -114,6 +118,7 @@ if(cluster.isMaster) {
     app.use(express.static(path.join(__dirname, 'public')));
 
 
+
     app.get('/ping', function(req, res){
         res.contentType('application/json');
         return res.json({ ping:"PONG" });
@@ -145,8 +150,7 @@ if(cluster.isMaster) {
 
     // Handle 404
     app.use(function(req, res) {
-        res.status(404);
-        return res.render('notfound', { layout: 'layouts/emptyLayout' });// not found
+        return res.status(404).json({ message: 'Not found route'});
     });
 
     http.createServer(app).listen(app.get('port'), function(){

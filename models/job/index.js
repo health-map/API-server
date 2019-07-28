@@ -1,10 +1,10 @@
 const request = require('request');
-const postg = require('./../../db/postgre');
+const postg = require('../../db/postgre');
 const redis = require('./../../db/redis');
 
 class Job{
 
-    static createBackgroundJob(options, cb) {
+    static createBackgroundJob(data, cb) {
         if (!process.env.JOB_QUEUE_USERNAME || !process.env.JOB_QUEUE_PASSWORD || !process.env.JOB_QUEUE_HOST) {
             console.log('Missing config for background jobs');
             return cb({
@@ -14,17 +14,12 @@ class Job{
             });
         }
     
-        console.log('PAYLOAD INCOMING TO CREATE BACKGROUND JOB', options);
+        console.log('PAYLOAD INCOMING TO CREATE BACKGROUND JOB', data);
 
         // TODO: we need to consider TTL also
         const payload = {
-            type: 'Routing.jsprit',
-            data: {
-                userId: `routing_uid_${userId}`,
-                company,
-                deliveries: points,
-                deliveriesLength: points.length
-            },
+            type: 'DataProcess.curation',
+            data,
             options: {
                 searchKeys: ['userId'],
                 attempts: 1,

@@ -5,3 +5,4 @@ data/postgresql/.DS_Store
 data/redis/shippify.rdb
 
 .DS_Store
+package-lock.json
