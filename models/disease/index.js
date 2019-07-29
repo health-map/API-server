@@ -9,13 +9,15 @@ class Disease{
             privacyLevel
         } = options;
         //TODO the query need to check it with the filters.
+        const where = privacyLevel?` 
+        WHERE 
+            privacy_level=${privacyLevel} `:``;
         const query = `
         SELECT 
             * 
         FROM 
             healthmap.disease 
-        WHERE 
-            privacy_level=${privacyLevel} `
+            ${where} `;
 
         postg.querySlave(query, (error, results)=>{
             if(error){

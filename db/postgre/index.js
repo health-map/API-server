@@ -4,16 +4,16 @@ const { master, slave } = require('./config')
 const masterPoolClusterConfiguration = new postg(Object.assign({}, master, {
   ssl: false,
   max: 20, // set pool max size to 20
-  idleTimeoutMillis: 1000, // close idle clients after 1 second
-  connectionTimeoutMillis: 1000, // return an error after 1 second if connection could not be established
+  idleTimeoutMillis: 60000, // close idle clients after 1 second
+  connectionTimeoutMillis: 60000, // return an error after 1 second if connection could not be established
 }));
 
 
 const slaveClusterConfiguration = new postg(Object.assign({}, slave, {
   ssl: false,
-  max: 20, // set pool max size to 20
-  idleTimeoutMillis: 1000, // close idle clients after 1 second
-  connectionTimeoutMillis: 1000, // return an error after 1 second if connection could not be established
+  max: 20, 
+  idleTimeoutMillis: 60000, 
+  connectionTimeoutMillis: 60000, 
 }));
 
 
