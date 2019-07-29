@@ -38,7 +38,9 @@ router.get('/', authAPI, langMiddleware, (req, res) => {
         wheather
     }
 
-    Incidence.getIncidences(options,  (error, result) => {
+    console.log('RANGE:', options);
+
+    Incidence.getLoaderIncidences(options,  (error, result) => {
         if(error){
 
             if(error.statusCode){
