@@ -1,49 +1,53 @@
-const kue = require('kue');
-const cluster = require('cluster');
+const pg = require ('pg');
+const EventEmitter = require('events');
+const util = require('util');
+const postg = require('./db/postgre');
+const redis = require('./db/redis');
 
-if(cluster.isMaster) {
-    const numWorkers = (process.env.SERVER_ENV === "production") ?
-      require('os').cpus().length :
-      1;
 
-    console.log('Master cluster setting up ' + numWorkers + ' workers...')
+const PREFIX_INCIDENCES = 'prefix_incidences'
 
-    for(let i = 0; i < numWorkers; i++) {
-        cluster.fork();
-    }
-
-    cluster.on('online', (worker)=>{
-        console.log('Worker ' + worker.process.pid + ' is online')
-    })
-
-    cluster.on('exit', (worker, code, signal)=>{
-        console.log('Worker ' + worker.process.pid + ' died with code: ' + code + ', and signal: ' + signal)
-        console.log('Starting a new worker')
-        cluster.fork()
-    })
-
-}else{
-    
-    const queue = kue.createQueue({
-        redis: {
-          port: process.env.JOB_QUEUE_REDIS_PORT || 6379,
-          host: process.env.JOB_QUEUE_REDIS_HOST || 'localhost',
-          auth: process.env.JOB_QUEUE_REDIS_PASSWORD
-        }
-    });
-
-    
-    queue.process('DataProcess.datalistener', 5, (job, done) => {
-
-        const domain = require('domain').create();
-
-        domain.on('error', (jobError) => {
-            console.log(jobError);
-            done(jobError);
-        });
-
-        domain.run(() => {
-            done(null)
-        });
-    });
+// Build and instantiate our custom event emitter
+function DbEventEmitter(){
+  EventEmitter.call(this);
 }
+
+
+function cleanPatients(){
+    const luaDelInfo = `return redis.call('del', unpack(redis.call('keys', ARGV[1])))`;
+    redis.connect()
+    .eval(luaDelInfo, 0, `${PREFIX_INCIDENCES}*`, (error)=>{
+        if(error){
+            return console.log('ERROR:',error)
+        }
+        return console.log('DONE!!')
+    })
+}
+
+util.inherits(DbEventEmitter, EventEmitter);
+var dbEventEmitter = new DbEventEmitter;
+
+// Define the event handlers for each channel name
+dbEventEmitter.on('new_patient', (msg) => {
+  // Custom logic for reacting to the event e.g. firing a webhook, writing a log entry etc
+  console.log('New patient received: ' + msg.id);
+  //Calling to clean the data cached.
+  cleanPatients();
+});
+
+// Connect to Postgres (replace with your own connection string)
+postg.getConnect((error, client)=>{
+  if(error) {
+    console.log('ERROR:',error);
+    return;
+  }
+
+  // Listen for all pg_notify channel messages
+  client.on('notification', function(msg) {
+    let payload = JSON.parse(msg.payload);
+    dbEventEmitter.emit(msg.channel, payload);
+  });
+  
+  // Designate which channels we are listening on. Add additional channels with multiple lines.
+  client.query('LISTEN new_patient');
+});
