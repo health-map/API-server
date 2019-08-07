@@ -2,7 +2,7 @@ const Express = require('express');
 const router = new Express.Router();
 //TODO: Pending to add a schema validator to validate the format that the data is sent.
 const inspector = require('schema-inspector');
-const Institution = require('../models/institution');
+const Department = require('../models/department');
 const authAPI = require('../middlewares/auth');
 const langMiddleware = require('../middlewares/lang');
 
@@ -10,14 +10,14 @@ const langMiddleware = require('../middlewares/lang');
 router.get('/', authAPI, langMiddleware, (req, res) => {
 
     const {
-        cityId
+        institutionId
     } = req.query
 
     const options = {
-        cityId
+        institutionId
     }
 
-    Institution.getInstitutions(options, (error, result) => {
+    Department.getDepartments(options, (error, result) => {
         if(error){
 
             if(error.statusCode){

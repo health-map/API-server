@@ -1,18 +1,18 @@
 const postg = require('../../db/postgre');
 const redis = require('./../../db/redis');
-class Institution{
+class Department{
 
-    static getInstitutions(options, cb) {
+    static getDepartments(options, cb) {
 
         const {
-            cityId
+            institutionId
         } = options;
 
         let where = undefined;
         const whereConditions = []
-        whereConditions.push(` it.enabled = TRUE `);
-        if (cityId){
-            whereConditions.push(` it.city_id = ${cityId} `)
+        whereConditions.push(` dep.enabled = TRUE `);
+        if (institutionId){
+            whereConditions.push(` dep.institution_id = ${institutionId} `)
         } 
         
         if (whereConditions.length){
@@ -21,17 +21,17 @@ class Institution{
 
         //TODO the query need to check it with the filters.
         const query = `
-        SELECT 
-            it.id AS id, 
-            it.city_id AS city_id, 
-            it.name AS name, 
-            it.description AS description, 
-            it.website AS website, 
-            it.created_at AS created_at, 
-            it.updated_at AS updated_at, 
-            it.enabled AS enabled, 
-            ST_AsGeoJSON(it.location) AS location
-        FROM healthmap.institution it
+          SELECT 
+          dep.id, 
+          dep.institution_id, 
+          dep.city_id, 
+          dep."name", 
+          dep.website,
+          dep.description, 
+          dep.created_at, 
+          dep.updated_at
+        FROM 
+          healthmap.department AS dep
         ${where ? where : '' }
         `
 
@@ -45,19 +45,17 @@ class Institution{
                 });
             }
 
-            const institutions = results.rows.map((row)=>{
-                return Object.assign({}, row, { location: JSON.parse(row.location) })
-            });
+            const departments = results.rows;
 
             cb(null, {
                 statusCode: 200,
                 code: 'OK',
                 message: 'Successful',
-                data: { institutions }
+                data: { departments }
             })
         });
         
     }
 
 }
-module.exports = Institution;
+module.exports = Department;
