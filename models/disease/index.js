@@ -51,6 +51,7 @@ class Disease{
             diseaseAggregation: (cback) => {
                 const query = `
                     SELECT 
+                        main.id AS id,
                         main."name" AS name,
                         main.privacy_level AS privacy_level,
                         main.enabled AS enabled,

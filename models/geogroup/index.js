@@ -18,11 +18,31 @@ class Geogroup{
     static getGeogroups(options, cb) {
 
         const  { 
-            createdBy
+            createdBy,
+            privacyLevel,
+            q,
+            cityId
         } = options;
 
+        let where = undefined;
 
-        const where = [];
+        let whereConditions = [];
+        if (createdBy){
+            whereConditions.push(` ge.created_by = ${createdBy} `);
+        }
+        if (cityId){
+            whereConditions.push(` g.city_id = ${cityId} `);
+        }
+        if (privacyLevel){
+            whereConditions.push(` ge.privacy_level <= ${privacyLevel} `);
+        } 
+        if (q && q.length && typeof(q) === 'string'){
+            whereConditions.push(` ge."name" LIKE '%${q}%' `);
+        }
+        
+        if (whereConditions.length){
+            where = 'WHERE '.concat(whereConditions.join('AND'));
+        }
 
         //TODO the query need to check it with the filters.
         const query = `
@@ -40,10 +60,9 @@ class Geogroup{
             ST_AsGeoJSON(g.polygon) AS geofence_polygon,
             g.granularity_level AS geofence_granularity_level
         FROM healthmap.geofence_group ge 
-        LEFT JOIN healthmap.geofences_groups geg ON geg.group_id=ge.id
-        LEFT JOIN healthmap.geofence g ON g.id=geg.geofence_id
-        WHERE 
-            ge.created_by=${createdBy} 
+            LEFT JOIN healthmap.geofences_groups geg ON geg.group_id=ge.id
+            LEFT JOIN healthmap.geofence g ON g.id=geg.geofence_id
+        ${where ? where : '' } 
         `
 
         postg.querySlave(query, (error, results)=>{
