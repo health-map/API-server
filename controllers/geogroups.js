@@ -53,10 +53,13 @@ router.post('/', authAPI, langMiddleware, (req, res) => {
     const  { 
         geogroup
     } = req.body;
-  
+    
+    const { id: createdBy, privacy_level: privacyLevel } = req.auth;  
 
     const options = {
-        geogroup
+        geogroup,
+        privacyLevel,
+        createdBy
     }
 
     Geogroup.createGeogroup(options,  (error, result) => {
