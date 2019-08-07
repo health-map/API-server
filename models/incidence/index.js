@@ -96,7 +96,7 @@ function getIncidences(key) {
                 
 
                 if(cie10){
-                    whereDiseases.push(`  p.gender = '${gender}' `)
+                    whereDiseases.push(`  d.cie10_code = '${cie10}' `)
                 }
 
                 if(categoryGroup){
@@ -125,6 +125,7 @@ function getIncidences(key) {
                 const query = 
                 `SELECT 
                     geo.id as id,
+                    ST_AsGeoJSON(geo.polygon) as polygon,
                     geo.name as geofence_name,
                     geo.population as geo_population,
                     COUNT(p.id) AS "absolute",
