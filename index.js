@@ -146,6 +146,7 @@ if(cluster.isMaster) {
     app.use('/institutions',require('./controllers/institutions'));
     app.use('/users',require('./controllers/users'));
     app.use('/age',require('./controllers/ages'));
+    app.use('/cities',require('./controllers/cities'));
 
 
     // Handle 404
