@@ -1,45 +1,101 @@
 const postg = require('../../db/postgre');
 const redis = require('./../../db/redis');
+const async = require('async');
 class Disease{
 
     static getDiseases(options, cb) {
 
         const {
             createdBy,
-            privacyLevel
+            privacyLevel,
+            q
         } = options;
         //TODO the query need to check it with the filters.
-        const where = privacyLevel?` 
-        WHERE 
-            privacy_level=${privacyLevel} `:``;
-        const query = `
-        SELECT 
-            * 
-        FROM 
-            healthmap.disease 
-            ${where} `;
+        
+        let where = undefined;
+        const whereConditions = []
+        whereConditions.push(` main.enabled = TRUE `);
+        if (privacyLevel){
+            whereConditions.push(` main.privacy_level <= ${privacyLevel} `)
+        } 
+        if (q && q.length && typeof(q) === 'string'){
+            whereConditions.push(` main."name" LIKE  '%${q}%' `)
+        }
+        
+        if (whereConditions.length){
+            where = 'WHERE '.concat(whereConditions.join('AND'));
+        }
 
-        postg.querySlave(query, (error, results)=>{
-            if(error){
-                console.log('ERROR:',error);
+        async.parallel({
+            diseases: (cback) => {
+                const query = `
+                    SELECT 
+                        * 
+                    FROM 
+                        healthmap.disease AS main
+                        ${where} 
+                    LIMIT 
+                        100`;
+                postg.querySlave(query, (error, results)=>{
+                    if(error){
+                        console.log('ERROR:',error);
+                        return cback({
+                            statusCode: 500,
+                            code: 'UE',
+                            message: 'Unknow error'
+                        });
+                    }
+                    return cback(null, results.rows);
+                })
+            },
+            diseaseAggregation: (cback) => {
+                const query = `
+                    SELECT 
+                        main."name" AS name,
+                        main.privacy_level AS privacy_level,
+                        main.enabled AS enabled,
+                        main.description AS description,
+                        COUNT(DISTINCT d.id) AS numberOfDiseases
+                    FROM 
+                        healthmap.aggregation AS main
+                            LEFT JOIN healthmap.disease_aggregation dagg ON main.id = dagg.aggregation_id
+                            LEFT JOIN healthmap.disease d ON d.id = dagg.disease_id
+                        ${where} 
+                    GROUP BY
+                        main.id
+                    LIMIT 
+                        100`;
+                postg.querySlave(query, (error, results)=>{
+                    if(error){
+                        console.log('ERROR:',error);
+                        return cback({
+                            statusCode: 500,
+                            code: 'UE',
+                            message: 'Unknow error'
+                        });
+                    }
+                    return cback(null, results.rows);
+                })
+            }
+        }, (err, results) => {
+            if (err){
+                console.log('ERROR', err);
                 return cb({
                     statusCode: 500,
                     code: 'UE',
                     message: 'Unknow error'
                 });
             }
-
-            const diseases = results.rows;
-
-            cb(null, {
+            return cb(null, {
                 statusCode: 200,
                 code: 'OK',
                 message: 'Successful',
-                data: { diseases }
+                data: { 
+                    diseases: results.diseases, 
+                    aggregation: results.diseaseAggregation 
+                }
             })
-        });
-        
+        })        
     }
-
 }
 module.exports = Disease;
