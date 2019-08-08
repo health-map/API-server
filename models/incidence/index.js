@@ -129,9 +129,9 @@ function getIncidences(key) {
                     geo.name as geofence_name,
                     geo.population as geo_population,
                     COUNT(p.id) AS "absolute",
-                    (COUNT(p.id) * 100) / population::decimal AS relative_to_population,
-                    1000 * (COUNT(p.id) * 100) / population::decimal AS every_1000_inhabitants,
-                    CAST(COUNT(p.id) AS DECIMAL) / (
+                    (COUNT(p.id) * 100) / NULLIF(population::decimal, 0) AS relative_to_population,
+                    1000 * (COUNT(p.id) * 100) / NULLIF(population::decimal, 0) AS every_1000_inhabitants,
+                    CAST(COUNT(p.id) AS DECIMAL) / NULLIF((
                     SELECT 
                         COUNT(p.id) 
                     FROM 
@@ -140,40 +140,48 @@ function getIncidences(key) {
                         geo.id = p2.geofence_id 
                     GROUP BY 
                         p2.geofence_id 
-                    ) AS relative_to_patients
+                    ), 0) AS relative_to_patients
                 FROM 
                     geofence geo LEFT JOIN patient p ON p.geofence_id = geo.id
-                    WHERE
+                WHERE
                     ${where.length?
-                        `${where.join(' AND \n\t\t')} AND `:
+                        `${where.join(' AND \n\t\t')} `:
                         ''
                     }
-                    p.geofence_id IN (
-                    SELECT 
-                        g.id
-                    FROM
-                        geofence_group pg 
-                        LEFT JOIN geofences_groups gg ON pg.id = gg.group_id 
-                        LEFT JOIN geofence g ON gg.geofence_id = g.id
-                        ${whereGeofences.length?
-                            `WHERE
-                                ${whereGeofences.join(' AND \n\t\t')} `:
-                            ''
-                        }
-                    ) AND
-                    p.disease_id IN (
-                    SELECT
-                        d.id
-                    FROM
-                        disease d
-                        LEFT JOIN disease_aggregation da ON d.id = da.disease_id 
-                        LEFT JOIN aggregation a ON da.aggregation_id = a.id
-                        ${ whereDiseases.length?
-                            ` WHERE  ${whereDiseases.join(' AND \n\t')} `: 
-                            ''
-                        } 
-                    )
-                GROUP by geo.id `
+                    ${whereGeofences.length? 
+                        `
+                        AND
+                        p.geofence_id IN (
+                        SELECT 
+                            g.id
+                        FROM
+                            geofence_group pg 
+                            LEFT JOIN geofences_groups gg ON pg.id = gg.group_id 
+                            LEFT JOIN geofence g ON gg.geofence_id = g.id
+                            WHERE
+                                ${whereGeofences.join(' AND \n\t\t')} 
+                        )
+                        ` 
+                        : ''
+                    }
+                    ${ whereDiseases.length ?
+                        ` 
+                        AND
+                        p.disease_id IN (
+                        SELECT
+                            d.id
+                        FROM
+                            disease d
+                            LEFT JOIN disease_aggregation da ON d.id = da.disease_id 
+                            LEFT JOIN aggregation a ON da.aggregation_id = a.id
+                                WHERE  ${whereDiseases.join(' AND \n\t')} 
+                        )
+                        ` 
+                        : ''
+                    }
+                GROUP BY 
+                    geo.id
+                ;`
 
                 postg.querySlave(query, (error, results)=>{
                     if(error){
@@ -185,7 +193,12 @@ function getIncidences(key) {
                         });
                     }
 
-                    const incidences = results.rows;
+                    const incidences = results.rows.map((row) => {
+                        return {
+                            ...row,
+                            polygon: JSON.parse(row.polygon)
+                        }
+                    });
 
                     cb(null, {
                         statusCode: 200,
