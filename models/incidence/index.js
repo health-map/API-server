@@ -25,12 +25,7 @@ function getLoaderIncidences(params, cb) {
           .then((incidences) => {
             const totalTime = new Date().getTime() - date;
             console.log('Time:', totalTime);
-            cb(null, {
-                statusCode: 200,
-                code: 'OK',
-                message: 'Successful',
-                data: { incidences }
-            })
+            cb(null, incidences);
           });
 }
 
