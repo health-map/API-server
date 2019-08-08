@@ -64,33 +64,35 @@ function getIncidences(key) {
 
                 const whereDiseases = [];
 
-                where.push(` p.enabled = TRUE `);
+                const wherePatients = [];
+
+                wherePatients.push(` p.enabled = TRUE `);
                 where.push(` geo.city_id = 1 `)
 
                 //whereDiseases.push(` d.privacy_level <= 0 `);
                 //whereGeofences.push(` pg.privacy_level <= 0 ` )
 
                 if(ageRange){
-                    where.push(` p.age_range = ${ageRange} `)
+                    wherePatients.push(` p.age_range = ${ageRange} `)
                 }
 
                 if(gender){
-                    where.push(`  p.gender = '${gender}' `)
+                    wherePatients.push(`  p.gender = '${gender}' `)
                 }
 
                 if(department){
-                    where.push(` p.department_id = ${department} `)
+                    wherePatients.push(` p.department_id = ${department} `)
                 }
 
                 if(granularityLevel){
                     where.push(` geo.granularity_level = ${granularityLevel} `)
                 }
                 if(institution){
-                    where.push(` p.institution_id = ${institution} `)
+                    wherePatients.push(` p.institution_id = ${institution} `)
                 }
 
                 if(startDate && endDate ){
-                    where.push(` p.registered_at BETWEEN '${startDate}' AND '${endDate}' `);
+                    wherePatients.push(` p.registered_at BETWEEN '${startDate}' AND '${endDate}' `);
                 }
 
                 
@@ -142,7 +144,12 @@ function getIncidences(key) {
                         p2.geofence_id 
                     ), 0) AS relative_to_patients
                 FROM 
-                    geofence geo LEFT JOIN patient p ON p.geofence_id = geo.id
+                    geofence geo LEFT JOIN patient p ON 
+                        p.geofence_id = geo.id 
+                        ${wherePatients.length ?
+                            ` AND ${wherePatients.join(' AND \n\t\t')} `
+                            : ''
+                        }
                 WHERE
                     ${where.length?
                         `${where.join(' AND \n\t\t')} `:
