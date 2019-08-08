@@ -63,6 +63,7 @@ function getIncidences(key) {
 
                 wherePatients.push(` p.enabled = TRUE `);
                 where.push(` geo.city_id = 1 `)
+                where.push(` geo.granularity_level = 7 `)
 
                 //whereDiseases.push(` d.privacy_level <= 0 `);
                 //whereGeofences.push(` pg.privacy_level <= 0 ` )
