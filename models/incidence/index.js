@@ -129,16 +129,16 @@ function getIncidences(key) {
                     COUNT(p.id) AS "absolute",
                     (COUNT(p.id) * 100) / NULLIF(population::decimal, 0) AS relative_to_population,
                     1000 * (COUNT(p.id) * 100) / NULLIF(population::decimal, 0) AS every_1000_inhabitants,
-                    CAST(COUNT(p.id) AS DECIMAL) / NULLIF((
-                    SELECT 
-                        COUNT(p.id) 
-                    FROM 
-                        patient p2
-                    WHERE 
-                        geo.id = p2.geofence_id 
-                    GROUP BY 
-                        p2.geofence_id 
-                    ), 0) AS relative_to_patients
+                    CAST((COUNT(p.id) * 100) AS DECIMAL) / NULLIF((
+                        SELECT 
+                            COUNT(p2.id) 
+                        FROM 
+                            patient p2
+                        WHERE 
+                            geo.id = p2.geofence_id 
+                        GROUP BY 
+                            p2.geofence_id 
+                        ), 0) AS relative_to_patients
                 FROM 
                     geofence geo LEFT JOIN patient p ON 
                         p.geofence_id = geo.id 
