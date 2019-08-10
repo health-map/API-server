@@ -105,9 +105,9 @@ function getIncidences(key) {
 
                 if(geoGroup.length){
                     if(geoGroup.length == 1){
-                        whereGeofences.push(` gg.id = ${geoGroup[0]} `)
+                        whereGeofences.push(` pg.id = ${geoGroup[0]} `)
                     }else{
-                        whereGeofences.push(` gg.id IN (${geoGroup.join(',')}) `)
+                        whereGeofences.push(` pg.id IN (${geoGroup.join(',')}) `)
                     }
                 }
 
