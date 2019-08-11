@@ -8,11 +8,17 @@ const langMiddleware = require('../middlewares/lang');
 
 
 router.get('/', authAPI, langMiddleware, (req, res) => {
+
+    const {
+        q
+    } = req.query;
+
     const { id: createdBy, privacy_level: privacyLevel } = req.auth;  
 
     const options = {
         privacyLevel,
-        createdBy
+        createdBy,
+        q
     }
 
     Disease.getDiseases(options, (error, result) => {
