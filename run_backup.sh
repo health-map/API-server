@@ -8,8 +8,8 @@ while [ -e "$fname" ]; do
    fname='%s_%02d'
 done
 
-printf 'Saving into backup file:  "%s" \n' "$fname.bak"
+printf 'Saving into backup file:  "%s" \n' "$fname.sql"
 
-docker exec -it api-server_postgres_1 pg_dump healthmap >> backup.bak;
-docker cp api-server_postgres_1:/backup.bak ./data/postgresql/backups/$fname.bak;
-rm backup.bak;
+docker exec -it api-server_postgres_1 pg_dump healthmap >> backup.sql;
+docker cp api-server_postgres_1:/backup.bak ./data/postgresql/backups/$fname.sql;
+#rm backup.bak;
