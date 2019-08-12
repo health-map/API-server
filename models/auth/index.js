@@ -19,7 +19,7 @@ class Auth {
   */
 
   static saveUser(user, cb){
-    const apiKey = `apikeys:api_id:${user.api_id}`;
+    const apiKey = `apikeys:api_id:${user.email}`;
     console.log('KEY:',apiKey)
     redis.connect()
     .hmset(apiKey, user, (error, result)=>{
@@ -32,7 +32,7 @@ class Auth {
   }
 
   static verify(authObj, cb) {
-
+    console.log('authObj', authObj);
     const apiKey = `apikeys:api_id:${authObj.username}`;
 
     console.log('apiKey:',apiKey)
@@ -53,7 +53,7 @@ class Auth {
           return cb(new Error(`Not found the key`))
         }
 
-        if(result.api_token !== authObj.password){
+        if(result.password !== authObj.password){
           return cb(new Error("Wrong secret key"));
         }
 
