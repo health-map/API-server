@@ -60,16 +60,19 @@ function query(pattern, sql, values, callback) {
 }
 
 
-function getConnect(callback) {
+function getConnect(cb) {
+
   const URL = `postgres://${masterConfiguration.user}:${masterConfiguration.password}@${masterConfiguration.host}:${masterConfiguration.port}/${masterConfiguration.database}`
-  pg.connect(URL, 
-  (error, client)=>{
+
+  const client = new pg.Client(URL);
+  client.connect( 
+  (error)=>{
     if (error) {
       console.log('ERROR:',error);
-      callback(error);
+      cb(error);
       return;
     }
-    callback(null, client);
+    cb(null, client);
   })
 }
 
