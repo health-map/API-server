@@ -43,7 +43,7 @@ class Curation{
                 return Object.assign({}, row, { polygon: JSON.parse(row.polygon) })
             }).filter((d)=>d.place_name);
 
-            const dataTotest = data.filter((_, index)=>index<100);
+            const dataTotest = data.filter((_, index)=>index<20000);
             Curation.nplGeocoder(dataTotest, geofences, (error, dataProcessed)=>{
                 if(error){
                     console.log('ERROR:',error);
