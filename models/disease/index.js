@@ -3,6 +3,24 @@ const redis = require('./../../db/redis');
 const async = require('async');
 class Disease{
 
+    static getDiseasesRaw(cback){
+        const query = `
+            SELECT 
+                * 
+            FROM 
+                healthmap.disease AS main
+            WHERE 
+                main.enabled = TRUE`;
+        console.log('QUERY:',query)
+        postg.querySlave(query, (error, results)=>{
+            if(error){
+                console.log('ERROR:',error);
+                cback(error);
+            }
+            return cback(null, results.rows);
+        })
+    }
+
     static getDiseases(options, cb) {
 
         const {
@@ -36,6 +54,7 @@ class Disease{
                         ${where} 
                     LIMIT 
                         100`;
+                console.log('QUERY:',query)
                 postg.querySlave(query, (error, results)=>{
                     if(error){
                         console.log('ERROR:',error);
