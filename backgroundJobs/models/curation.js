@@ -4,6 +4,8 @@ const moment = require('moment');
 const asyncF = require('async');
 const uc = require('upper-case');
 
+const geocoder = require('./../libs/geocoding');
+
 const Patient = require('./../../models/patient');
 
 const Age = require('./../../models/age');
@@ -11,6 +13,158 @@ const Disease = require('./../../models/disease');
 
 class Curation{
 
+
+    static process(data, city, progress, cb){
+
+        const query = `SELECT 
+            ge.id as id,
+            ge.name as name,
+            ge.description as description,
+            ST_AsGeoJSON(ge.polygon) as polygon,
+            ge.parent_geofence_id as parent_geofence_id,
+            ge.granularity_level as granularity_level,
+            ge.city_id as city_id,
+            ge.geo_tag as geo_tag,
+            ge.population as population,
+            ge.created_at as created_at,
+            ge.updated_at as updated_at,
+            cp.related_geofence_name as city_name,
+            cp.place_name,
+            cp.type
+        FROM 
+            healthmap.geofence ge 
+        left join healthmap.city_place cp ON cp.related_geofence=ge.id
+        WHERE 
+            ge.city_id=${city} and cp.type='place'
+        `
+        
+        postq.queryMaster(query, (error, result)=>{
+            if(error){
+                console.log('ERROR:',error);
+                return cb(error);
+            }
+
+            const geofences = result.rows.map((row)=>{
+                return Object.assign({}, row, { polygon: JSON.parse(row.polygon) })
+            }).filter((d)=>d.place_name)
+            .filter((d)=>d.type === 'place');
+
+            const dataTotest = data.filter((_, index)=>index<10);
+
+            let summary = {
+                totalPacients: dataTotest.length
+            }
+            asyncF.waterfall([
+                (cb)=>{ //GOOGLE
+                    Curation.googleGeocoder(dataTotest, city, (error, dataProcessed)=>{
+                        if(error){
+                            return cb(error);
+                        }
+
+                        const googleGeocoder = dataProcessed.filter(d=>d.geocoder=='google')
+                        summary.googleGeocoder = googleGeocoder.length;
+                        return cb(null, dataProcessed)
+                    })
+                },
+                (dataTotest, cb)=>{ //BIGRAMS TRIGRAMS...
+                    Curation.nplGeocoder(dataTotest, geofences, (error, dataProcessed)=>{
+                        if(error){
+                            console.log('ERROR:',error);
+                            return cb(error);
+                        }
+                        
+                        const nplGeocoder = dataProcessed.filter(d=>d.geocoder=='nplgeocoder')
+                        summary.nplGeocoder = nplGeocoder.length;
+                        return cb(null, dataProcessed);  
+                    });
+                },
+                (dataTotest, cb)=>{
+                    return asyncF.map(dataTotest, (item, cb)=>{
+                        Curation.processIntersection(item, city, cb); //Intersections
+                    }, (_, dataProcessed)=>{
+                        const  intersectionsGeocoder = dataProcessed.filter(d=>d.geocoder=='intersections')
+                        summary.intersectionsGeocoder = intersectionsGeocoder.length;
+                        cb(null, dataProcessed)
+                    });
+                }
+            ], (error, dataProcessed)=>{
+                if(error){
+                    return cb(error);
+                }
+
+                const dataFiltered = dataProcessed.filter(d=>d.geofenceId)
+
+                summary.totalGeocodedPatients = dataFiltered.length;
+
+                Curation.insertPatients(dataFiltered, (error, result)=>{
+                                
+                    if(error){
+                        return cb(error);
+                    }
+                    summary.savedPatients = result.length;
+                    console.log('SUMMARY:',summary)
+                    console.log('DONE!')
+                    return cb(null, summary)
+                })
+            })    
+        });
+    }
+
+    static computingGeofence(options, cb){
+        const {
+            latitude,
+            longitude
+        } = options;
+
+
+        const query =
+         `  SELECT 
+                ge.id as id,
+                ge.name as name
+            FROM 
+                healthmap.geofence ge 
+            WHERE 
+                ge.granularity_level = 7 AND
+                ST_Contains(ge.polygon, ST_GeomFromText('POINT(${longitude} ${latitude})')) = TRUE 
+            `
+
+        postq.queryMaster(query, (error, result)=>{
+            if(error){
+                console.log('ERROR:',error);
+                return cb(error);
+            }
+
+            if(!result.rows.length){
+                return cb(new Error('Not found geofence'));
+            }
+
+            console.log('FOUND GEOFENCE ID:',result.rows[0].id);
+            const geofenceId = result.rows[0].id
+            return cb(null, geofenceId)
+        })
+    }
+    static googleGeocoder(data, city, cb){
+        asyncF.mapSeries( data, (item, cb)=>{
+            setTimeout(() => {
+                geocoder(item['Direccion'], (error, result)=>{
+                    if(error){
+                        return cb(null, item);
+                    }
+                    Curation.computingGeofence(result, (error, geofenceId)=>{
+                        if(error){
+                            return cb(null, item);
+                        }
+                        return cb( null, Object.assign({}, item, { geofenceId, geocoder: 'google' }))
+                    })
+                })
+            }, 200);
+        }, (error, results)=>{
+            if(error){
+                return cb(error);
+            }
+            cb(null, results);
+        })
+    }
 
     static processIntersection(item, city, cb){
 
@@ -86,81 +240,11 @@ class Curation{
             console.log('FOUND GEOFENCE ID:',result.rows[0].id);
             const geofenceId = result.rows[0].id
 
-            cb(null, Object.assign({}, item, { geofenceId }))
+            cb(null, Object.assign({}, item, { geofenceId, geocoder: 'intersections' }))
         })
     }
 
-    static process(data, city, progress, cb){
-
-        const query = `SELECT 
-            ge.id as id,
-            ge.name as name,
-            ge.description as description,
-            ST_AsGeoJSON(ge.polygon) as polygon,
-            ge.parent_geofence_id as parent_geofence_id,
-            ge.granularity_level as granularity_level,
-            ge.city_id as city_id,
-            ge.geo_tag as geo_tag,
-            ge.population as population,
-            ge.created_at as created_at,
-            ge.updated_at as updated_at,
-            cp.related_geofence_name as city_name,
-            cp.place_name,
-            cp.type
-        FROM 
-            healthmap.geofence ge 
-        left join healthmap.city_place cp ON cp.related_geofence=ge.id
-        WHERE 
-            ge.city_id=${city} and cp.type='place'
-        `
-        
-        postq.queryMaster(query, (error, result)=>{
-            if(error){
-                console.log('ERROR:',error);
-                return cb(error);
-            }
-
-            const geofences = result.rows.map((row)=>{
-                return Object.assign({}, row, { polygon: JSON.parse(row.polygon) })
-            }).filter((d)=>d.place_name)
-            .filter((d)=>d.type === 'place');
-
-            const dataTotest = data.filter((_, index)=>index<200);
-            Curation.nplGeocoder(dataTotest, geofences, (error, dataProcessed)=>{
-                if(error){
-                    console.log('ERROR:',error);
-                    return cb(error);
-                }
-                
-                return asyncF.map(dataProcessed, (item, cb)=>{
-                    Curation.processIntersection(item, city, cb); //Intersections
-                }, (_, dataProcessed)=>{
-
-                    const dataFiltered = dataProcessed.filter((d)=>d.geofenceId);
-
-                    let summary = {
-                        dataProcessed,
-                        dataProcessedLength: dataProcessed.length,
-                        dataFiltered,
-                        dataFilteredLength: dataFiltered.length
-                    }
-
-                    console.log('dataFiltered:',dataFiltered)
-
-                    Curation.insertPatients(dataFiltered, (error, result)=>{
-                        
-                        if(error){
-                            return cb(error);
-                        }
-                        summary.patients = result;
-                        console.log('SUMMARY:',summary)
-                        console.log('DONE!')
-                        cb(null, summary);
-                    })
-                });
-            });
-        });
-    }
+    
 
 
     static insertPatients(data, cb){
@@ -212,7 +296,7 @@ class Curation{
                 return cb(null, withAge)
             },
             (dataWithAge, cb)=>{
-                return asyncF.each(dataWithAge, (item, cback)=>{
+                return asyncF.map(dataWithAge, (item, cback)=>{
 
                     const time = moment(new Date(item['Fecha Ingreso'])).format('YYYY-MM-DD HH:mm:ss');
                    
@@ -306,6 +390,10 @@ class Curation{
 
         Promise.all(data.map(async (dataItem) => {
 
+            if(dataItem.geofenceId){
+                return dataItem; 
+            }
+
             const address = Curation.commonCharacters(dataItem.Direccion);
             
             const entities = await manager.findEntities(
@@ -323,6 +411,7 @@ class Curation{
             dataItem.matches = entity;
             if(dataItem.matches){
                 dataItem.geofenceId = dataToCompareObject[dataItem.matches.option].id;
+                dataItem.geocoder = 'nplgeocoder'
             }
             return dataItem;
         })).then((dataProcessed) => {

@@ -39,4 +39,4 @@ function googleGeocoder(address, cb) {
   })
 }
 
-module.exports = Geocoding
+module.exports = googleGeocoder
