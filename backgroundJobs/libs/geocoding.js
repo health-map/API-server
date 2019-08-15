@@ -2,7 +2,7 @@ const request = require('request');
 const url = require('url');
 
 const redis = require('./../../db/redis');
-const async = require('async');
+const asyncF = require('async');
 
 const GEOCODING_SERVICES = 'geocoder'
 
@@ -41,7 +41,7 @@ const geocodingAddressDataloader = new RedisDataLoader(
 );
 
 
-function geocode(address, cb){
+function geocode(address, cback){
   console.log('address:',address)
   const params = {
     address
@@ -49,23 +49,25 @@ function geocode(address, cb){
   const date = new Date().getTime();
   geocodingAddressDataloader.load(params)
     .catch((error) => {
-      return cb(error);
-    })
-    .then((result) => {
       const totalTime = new Date().getTime() - date;
       console.log('Time:', totalTime);
-      return cb(null, result);
+      return cback(error);
+    })
+    .then((result) => {
+      if(result){ 
+        const totalTime = new Date().getTime() - date;
+        console.log('Time:', totalTime);
+        return cback(null, result);
+      }
     });
 }
 
 function geocoderBatchingFunction(key) {
   console.log('KEY:',key)
   return new Promise((resolve, reject) => {
-    async.map(
+    asyncF.map(
       key,
       (keys, cb) => {
-
-
         const {
           address
         } = keys;
@@ -85,21 +87,20 @@ function geocoderBatchingFunction(key) {
         return request.get(geocodingURL, (error, response, body) => {
           if (error) return cb(error)
           if (!(response.statusCode >= 200 || response.statusCode < 300)) {
-            const error = new Error('HTTP Error')
-            error.statusCode = response.statusCode
-            error.url = geocodingURL
-            return cb(error)
+            return cb('HTTP Error')
           }
           const { status, results } = JSON.parse(body)
           if (status !== 'OK') {
-            const error = new Error('Google Geocoding API Error')
-            error.status = status
-            return cb(error)
+            return cb('Google Geocoding API Error')
           }
+
           const accuracy = results[0].geometry.location_type
+          if(accuracy !== 'ROOF_TOP'){
+            return cb(`Less accuracy than required  accuracy: ${accuracy}`);
+          }
+          console.log('accuracy:',accuracy)
           const { lat: latitude, lng: longitude } = results[0].geometry.location
           const formattedAddress = results[0].formatted_address;
-
           return cb(null, { latitude, longitude, formattedAddress, accuracy })
         })
       },

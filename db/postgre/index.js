@@ -11,16 +11,16 @@ const masterConfiguration = Object.assign({}, master, {
 const masterPoolClusterConfiguration = new postg(Object.assign({}, master, {
   ssl: false,
   max: 20, // set pool max size to 20
-  idleTimeoutMillis: 60000, // close idle clients after 1 second
-  connectionTimeoutMillis: 60000, // return an error after 1 second if connection could not be established
+  idleTimeoutMillis: 600000000, // close idle clients after 1 second
+  connectionTimeoutMillis: 600000000, // return an error after 1 second if connection could not be established
 }));
 
 
 const slaveClusterConfiguration = new postg(Object.assign({}, slave, {
   ssl: false,
   max: 20, 
-  idleTimeoutMillis: 60000, 
-  connectionTimeoutMillis: 60000, 
+  idleTimeoutMillis: 600000000, 
+  connectionTimeoutMillis: 600000000, 
 }));
 
 

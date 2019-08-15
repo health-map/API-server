@@ -56,7 +56,7 @@ class Curation{
             }).filter((d)=>d.place_name)
             .filter((d)=>d.type === 'place');
 
-            const dataTotest = data;
+            const dataTotest = data.filter((d, i)=>i<100);
 
             let summary = {
                 totalPacients: dataTotest.length
@@ -74,7 +74,7 @@ class Curation{
                     })
                 },
                 (dataTotest, cb)=>{
-                    return asyncF.map(dataTotest, (item, cb)=>{
+                    return asyncF.mapSeries(dataTotest, (item, cb)=>{
                         Curation.placesGeocoder(item, city, cb); //places
                     }, (_, dataProcessed)=>{
                         const  placesgeocoder = dataProcessed.filter(d=>d.geocoder=='placesgeocoder')
@@ -95,7 +95,7 @@ class Curation{
                     });
                 },
                 (dataTotest, cb)=>{
-                    return asyncF.map(dataTotest, (item, cb)=>{
+                    return asyncF.mapSeries(dataTotest, (item, cb)=>{
                         Curation.processIntersection(item, city, cb); //Intersections
                     }, (_, dataProcessed)=>{
                         const  intersectionsGeocoder = dataProcessed.filter(d=>d.geocoder=='intersections')
@@ -310,7 +310,7 @@ class Curation{
 
                 const addresss = addresses.map((address)=> Curation.commonCharactersForIntersections(address)).join(' ')+", GUAYAQUIL";
 
-                geocoder(addresss, (error, result)=>{
+                geocoder(preAddress+", GUAYAQUIL", (error, result)=>{
                     if(error){
                         return cb(null, item);
                     }
