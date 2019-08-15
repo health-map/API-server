@@ -4,12 +4,19 @@ const moment = require('moment');
 const asyncF = require('async');
 const uc = require('upper-case');
 
+var Combinatorics = require('./../libs/combinatorics');
+
 const geocoder = require('./../libs/geocoding');
 
 const Patient = require('./../../models/patient');
 
 const Age = require('./../../models/age');
 const Disease = require('./../../models/disease');
+
+String.prototype.replaceAlfa = function(){
+    const number = parseInt(this);
+    return Number.isNaN(number)?this:`${number}`;
+};
 
 class Curation{
 
@@ -49,7 +56,7 @@ class Curation{
             }).filter((d)=>d.place_name)
             .filter((d)=>d.type === 'place');
 
-            const dataTotest = data.filter((_, index)=>index<10);
+            const dataTotest = data;
 
             let summary = {
                 totalPacients: dataTotest.length
@@ -65,6 +72,15 @@ class Curation{
                         summary.googleGeocoder = googleGeocoder.length;
                         return cb(null, dataProcessed)
                     })
+                },
+                (dataTotest, cb)=>{
+                    return asyncF.map(dataTotest, (item, cb)=>{
+                        Curation.placesGeocoder(item, city, cb); //places
+                    }, (_, dataProcessed)=>{
+                        const  placesgeocoder = dataProcessed.filter(d=>d.geocoder=='placesgeocoder')
+                        summary.placesgeocoder = placesgeocoder.length;
+                        cb(null, dataProcessed)
+                    });
                 },
                 (dataTotest, cb)=>{ //BIGRAMS TRIGRAMS...
                     Curation.nplGeocoder(dataTotest, geofences, (error, dataProcessed)=>{
@@ -93,6 +109,7 @@ class Curation{
                 }
 
                 const dataFiltered = dataProcessed.filter(d=>d.geofenceId)
+                const dataMissingGeocoded = dataProcessed.filter(d=>!d.geofenceId)
 
                 summary.totalGeocodedPatients = dataFiltered.length;
 
@@ -103,11 +120,149 @@ class Curation{
                     }
                     summary.savedPatients = result.length;
                     console.log('SUMMARY:',summary)
+                    console.log('NOT FOUND ADDRESSES:',dataMissingGeocoded.map(({ Direccion })=>Direccion).join('\n\t'));
                     console.log('DONE!')
                     return cb(null, summary)
                 })
             })    
         });
+    }
+
+    static nGramQuery(cmb, cb){
+        const composedLike = cmb.map((ct)=>{
+                return ` cp.place_name LIKE '%${ct.map((c)=>c.length <= 2 ?` ${c} `: c).join('%')}%' `
+        }).join(' OR ');
+        const query = `
+        SELECT 
+            ge.id 
+        FROM 
+            healthmap.geofence ge             
+            left join healthmap.city_place cp ON cp.related_geofence=ge.id
+        WHERE 
+            ${composedLike} `
+
+            postq.queryMaster(query, (error, result)=>{
+                if(error){
+                    console.log('ERROR:',error);
+                    return cb(null, null);
+                }
+                if(result.rows.length){
+                    console.log('FOUND response with N-GRAMS')
+                    return cb(null, result.rows[0].id)
+                }
+            cb(null, null)
+        });
+    }
+
+
+    static filterShortWords(d){
+
+        return (d.length &&
+        d !== 'LA'  &&
+        d !== 'PARROQUIA' &&
+        d !== '00' &&
+        d !== '0' &&
+        d !== '000' &&
+        d !== 'COOP' &&
+        d !== 'COOP.' &&
+        d !== 'COP.' &&
+        d !== 'COP' &&
+        d !== 'SL.' &&
+        d !== 'DEL' &&
+        d !== 'LOS' &&
+        d !== 'ETAPA' &&
+        d !== 'AVA' &&
+        d !== 'AVA.' &&
+        d !== 'MZ' &&
+        d !== 'MZB' &&
+        d !== 'CALLEJON' &&
+        d !== 'DE' &&
+        d !== 'ENTRE' &&
+        d !== 'MZ.' &&
+        d !== 'DEL' &&
+        d !== 'SOLAR' &&
+        d !== 'SOLAR' &&
+        d !== 'AVAS' &&
+        d !== 'EN' &&
+        d !== '.')
+    }
+
+    static placesGeocoder(item, city, cb){
+
+        if(item.geofenceId){
+            return cb(null, item); 
+        }
+
+        const preAddress = uc(item['Direccion'].toString().toUpperCase());
+        console.log('preAddress:',preAddress)
+        const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
+            return addresses.concat(address.split(' '));
+        }, [])
+        .map((address)=>Curation.commonCharactersForIntersections(address))
+        .filter(Curation.filterShortWords)
+
+        asyncF.waterfall([
+            (cb)=>{ //N-GRAMS 
+                try{
+                    const address = addresses.splice(0, 5);
+                    const cmb = Combinatorics.permutation(address);
+                    Curation.nGramQuery(cmb, cb)
+                }catch(error){
+                    console.log('ERROR:',error)
+                    return cb(null, null) //No results
+                }
+            },
+            (result, cb)=>{ // TRI-GRAMS
+                if(result){
+                    return cb(null, result)
+                }
+                try{
+                    const address = addresses.splice(0, 5);
+                    const cmb = Combinatorics.combination(address, 3);
+                    Curation.nGramQuery(cmb, cb)
+                }catch(error){
+                    console.log('ERROR:',error)
+                    return cb(null, null) //No results
+                }
+            },
+            (result, cb)=>{ // BI-GRAMS
+                if(result){
+                    return cb(null, result)
+                }
+                try{
+                    const address = addresses.splice(0, 5);
+                    const cmb = Combinatorics.combination(address, 2);
+                    Curation.nGramQuery(cmb, cb)
+                }catch(error){
+                    console.log('ERROR:',error)
+                    return cb(null, null) //No results
+                }
+            }//,
+            // (result, cb)=>{ // BI-GRAMS
+            //     if(result){
+            //         return cb(null, result)
+            //     }
+            //     try{
+            //         Curation.nGramQuery([addresses], cb)
+            //     }catch(error){
+            //         console.log('ERROR:',error)
+            //         return cb(null, null) //No results
+            //     }
+            // }
+        ], (error, geofenceId)=>{
+            if(error){
+                console.log('ERROR:',error);
+                return cb(null, item);
+            }
+
+            if(!geofenceId){
+                return cb(null, item);
+            }
+
+            console.log('PLACESGEOCODER:',item['Direccion'],'GEO:',geofenceId)
+            return cb( null, Object.assign({}, item, { geofenceId, geocoder: 'placesgeocoder' }))
+        })
+
     }
 
     static computingGeofence(options, cb){
@@ -146,10 +301,20 @@ class Curation{
     static googleGeocoder(data, city, cb){
         asyncF.mapSeries( data, (item, cb)=>{
             setTimeout(() => {
-                geocoder(item['Direccion'], (error, result)=>{
+
+                const preAddress = item['Direccion'].toString().toUpperCase();
+                console.log('preAddress:',preAddress)
+                const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
+                    return addresses.concat(address.split(' ').filter(d=>d.length));
+                }, []);
+
+                const addresss = addresses.map((address)=> Curation.commonCharactersForIntersections(address)).join(' ')+", GUAYAQUIL";
+
+                geocoder(addresss, (error, result)=>{
                     if(error){
                         return cb(null, item);
                     }
+
                     Curation.computingGeofence(result, (error, geofenceId)=>{
                         if(error){
                             return cb(null, item);
@@ -165,6 +330,7 @@ class Curation{
             cb(null, results);
         })
     }
+
 
     static processIntersection(item, city, cb){
 
@@ -183,7 +349,8 @@ class Curation{
             return cb(null, item);
         }
 
-        const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address)).filter(d=>{
+        const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address))
+            .filter(d=>{
             return (d.length &&
             d !== 'LA'  &&
             d !== 'PARROQUIA' &&
@@ -224,7 +391,7 @@ class Curation{
         left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
             ge.city_id=${city} and cp.type='intersection' and
-            cp.place_name SIMILAR TO ${likeComposer}
+            UPPER(cp.place_name) SIMILAR TO ${likeComposer}
             `
 
         postq.queryMaster(query, (error, result)=>{
@@ -337,10 +504,6 @@ class Curation{
         });
     }
 
-    static async intersectionGeocoder(data){
-
-    }
-
     static async nplGeocoder(data, dataToCompare, cback){
 
         const { NerManager } = require('node-nlp');
@@ -427,17 +590,42 @@ class Curation{
 
 
     static commonCharactersForIntersections(str){
+        
         return str.replace('SECTOR', '')
+        .replace(' AVA ', '')
+         .replace('CDLA', '')
+         .replace('CDLA.', '')
          .replace('LA', '')
          .replace('PARROQUIA', '')
          .replace('COOP.', '')
          .replace('ENTRE', '')
          .replace(' DEL ', '')
          .replace(' LA ', '')
+         .replace('#', '')
+         .replace(' LO ', '')
+         .replace(' LOS ', '')
+         .replace(' 00 ', '')
+         .replace(' 0 ', '')
+         .replace(' 000 ', '')
+         .replace(' EN ', '')
          .replace(' CLLJ. ')
          .replace(' DE ', '')
+         .replace(' I ', '')
+         .replace(' EO ', '')
          .replace(' LOS ', '')
          .replace('COOP', '')
+         .replace(' MZ ', '')
+         .replace(' VIL ', '')
+         .replace(' CD ', '')
+         .replace(' BLOQ ', '')
+         .replace(' BLOQUE ', '')
+         .replace(' CAAR ', '')
+         .replace(' VILLA ', '')
+         .replace(' E/ ', '')
+         .replace(' CLL. ', '')
+         .replace(' CLL ', '')
+         .replace(' E. ', '')
+         .replace(' MZ. ', '')
          .replace(' ETAPA ', '')
          .replace('URB.', '')
          .replace(' BQ. ', '')
@@ -446,6 +634,10 @@ class Curation{
          .replace(' EN ', '')
          .replace(' I ', '')
          .replace(' . ', '')
+         .replace(/[^\w\s]|_/g, "")
+         .replace(/\s+/g, " ")
+         .replace("\\d[a-zA-Z]", "")
+         .replaceAlfa()
          .trim()
      }
 
