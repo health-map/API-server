@@ -56,7 +56,8 @@ class Curation{
             }).filter((d)=>d.place_name)
             .filter((d)=>d.type === 'place');
 
-            const dataTotest = data.filter((d, i)=>true);
+            // filter adresses with less than 4 characters
+            const dataTotest = data.filter((d, i)=>d['Direccion'].length > 4);
 
             let summary = {
                 totalPacients: dataTotest.length
@@ -118,8 +119,9 @@ class Curation{
                         return cb(error);
                     }
                     summary.savedPatients = result.length;
-                    console.log('SUMMARY:',summary)
+                    console.log('SUMMARY:',summary);
                     console.log('NOT FOUND ADDRESSES:',dataMissingGeocoded.map(({ Direccion })=>Direccion).join('\n\t'));
+                    console.log('SUMMARY:',summary)
                     console.log('DONE!')
                     return cb(null, summary)
                 })
@@ -434,7 +436,7 @@ class Curation{
         })
         .join('%')}%'`;
 
-        if (likeComposer == '%%'){
+        if (likeComposer === "'%%'" || likeComposer.length < 6){
           return cb(null, item);
         }
          
@@ -526,7 +528,7 @@ class Curation{
                 return cb(null, withAge)
             },
             (dataWithAge, cb)=>{
-                return asyncF.map(dataWithAge, (item, cback)=>{
+                return asyncF.mapSeries(dataWithAge, (item, cback)=>{
 
                     const time = moment(new Date(item['Fecha Ingreso'])).format('YYYY-MM-DD HH:mm:ss');
                    
@@ -550,14 +552,15 @@ class Curation{
                     if(item.ageId === -1 || !item.ageId){
                       return cback(null, options);
                     }
-
-                    Patient.createPatient(options, (error, results)=>{
-                        if(error){
-                            console.log('ERROR:',error);
-                            return cback(null, []);
-                        }
-                        cback(null, results);
-                    });
+                    setTimeout(() => {
+                        Patient.createPatient(options, (error, results)=>{
+                            if(error){
+                                console.log('ERROR:',error);
+                                return cback(null, []);
+                            }
+                            cback(null, results);
+                        });
+                    }, 5);
                 }, (error, results)=>{
                     if(error){
                         return cb(error);

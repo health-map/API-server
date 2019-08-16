@@ -21,5 +21,8 @@
 	"Job 16 created successfully": "Job 16 created successfully",
 	"Job 17 created successfully": "Job 17 created successfully",
 	"Job 18 created successfully": "Job 18 created successfully",
-	"Job 19 created successfully": "Job 19 created successfully"
+	"Job 19 created successfully": "Job 19 created successfully",
+	"Job 20 created successfully": "Job 20 created successfully",
+	"Job 21 created successfully": "Job 21 created successfully",
+	"Job 22 created successfully": "Job 22 created successfully"
 }
