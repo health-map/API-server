@@ -51,10 +51,12 @@ function geocode(address, cback){
     .catch((error) => {
       const totalTime = new Date().getTime() - date;
       console.log('Time:', totalTime);
+      console.log('error en google', error);
       return cback(error);
     })
     .then((result) => {
       if(result){ 
+        console.log('ENCONTRADA', result);
         const totalTime = new Date().getTime() - date;
         console.log('Time:', totalTime);
         return cback(null, result);
@@ -79,7 +81,8 @@ function geocoderBatchingFunction(key) {
           pathname: '/maps/api/geocode/json',
           query: {
             address: address.replace(' ', '+'),
-            key: GOOGLE_DIRECTIONS_API_KEY
+            key: GOOGLE_DIRECTIONS_API_KEY,
+            bounds: "-2.289252,-80.04871|-2.00194,-79.853512"
           }
         }
         const geocodingURL = url.format(geocodingURLObject)
@@ -95,9 +98,6 @@ function geocoderBatchingFunction(key) {
           }
 
           const accuracy = results[0].geometry.location_type
-          if(accuracy !== 'ROOF_TOP'){
-            return cb(`Less accuracy than required  accuracy: ${accuracy}`);
-          }
           console.log('accuracy:',accuracy)
           const { lat: latitude, lng: longitude } = results[0].geometry.location
           const formattedAddress = results[0].formatted_address;

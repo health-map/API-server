@@ -56,24 +56,13 @@ class Curation{
             }).filter((d)=>d.place_name)
             .filter((d)=>d.type === 'place');
 
-            const dataTotest = data.filter((d, i)=>i<100);
+            const dataTotest = data.filter((d, i)=>i<1000);
 
             let summary = {
                 totalPacients: dataTotest.length
             }
             asyncF.waterfall([
-                (cb)=>{ //GOOGLE
-                    Curation.googleGeocoder(dataTotest, city, (error, dataProcessed)=>{
-                        if(error){
-                            return cb(error);
-                        }
-
-                        const googleGeocoder = dataProcessed.filter(d=>d.geocoder=='google')
-                        summary.googleGeocoder = googleGeocoder.length;
-                        return cb(null, dataProcessed)
-                    })
-                },
-                (dataTotest, cb)=>{
+                (cb)=>{
                     return asyncF.mapSeries(dataTotest, (item, cb)=>{
                         Curation.placesGeocoder(item, city, cb); //places
                     }, (_, dataProcessed)=>{
@@ -102,7 +91,17 @@ class Curation{
                         summary.intersectionsGeocoder = intersectionsGeocoder.length;
                         cb(null, dataProcessed)
                     });
-                }
+                },
+                (dataTotest, cb)=>{ //GOOGLE
+                    Curation.googleGeocoder(dataTotest, city, (error, dataProcessed)=>{
+                        if(error){
+                            return cb(error);
+                        }
+                        const googleGeocoder = dataProcessed.filter(d=>d.geocoder=='google')
+                        summary.googleGeocoder = googleGeocoder.length;
+                        return cb(null, dataProcessed)
+                    })
+                },
             ], (error, dataProcessed)=>{
                 if(error){
                     return cb(error);
@@ -128,18 +127,19 @@ class Curation{
         });
     }
 
-    static nGramQuery(cmb, cb){
+    static nGramQuery(cmb, cb, type = undefined){
         const composedLike = cmb.map((ct)=>{
-                return ` cp.place_name LIKE '%${ct.map((c)=>c.length <= 2 ?` ${c} `: c).join('%')}%' `
+                return ` cp.place_name LIKE '%${ct.map((c)=>c.length <= 2 ?`${c}`: c).join('%')}%' `
         }).join(' OR ');
         const query = `
         SELECT 
             ge.id 
         FROM 
-            healthmap.geofence ge             
+            healthmap.geofence ge           
             left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
-            ${composedLike} `
+            ${ type === 'places' ? "cp.type = 'place' AND " : ''}  
+            (${composedLike}) `
 
             postq.queryMaster(query, (error, result)=>{
                 if(error){
@@ -168,6 +168,8 @@ class Curation{
         d !== 'COP.' &&
         d !== 'COP' &&
         d !== 'SL.' &&
+        d !== 'S' &&
+        d !== 'SL' &&
         d !== 'DEL' &&
         d !== 'LOS' &&
         d !== 'ETAPA' &&
@@ -184,6 +186,7 @@ class Curation{
         d !== 'SOLAR' &&
         d !== 'AVAS' &&
         d !== 'EN' &&
+        d !== 'BARRIO' &&
         d !== '.')
     }
 
@@ -202,22 +205,26 @@ class Curation{
         .filter(Curation.filterShortWords)
 
         asyncF.waterfall([
-            (cb)=>{ //N-GRAMS 
+            // (result, cb)=>{ //N-GRAMS 
+            //     if(result){
+            //       return cb(null, result)
+            //     }
+            //     try{
+            //         const address = addresses.splice(0, 5);
+            //         const cmb = Combinatorics.combination(address, 4);
+            //         Curation.nGramQuery(cmb, cb)
+            //     }catch(error){
+            //         console.log('ERROR:',error)
+            //         return cb(null, null) //No results
+            //     }
+            // },
+            (cb)=>{ // TRI-GRAMS
+                // if(result){
+                //     return cb(null, result)
+                // }
+                console.log('TRIGRAMS');
                 try{
-                    const address = addresses.splice(0, 5);
-                    const cmb = Combinatorics.permutation(address);
-                    Curation.nGramQuery(cmb, cb)
-                }catch(error){
-                    console.log('ERROR:',error)
-                    return cb(null, null) //No results
-                }
-            },
-            (result, cb)=>{ // TRI-GRAMS
-                if(result){
-                    return cb(null, result)
-                }
-                try{
-                    const address = addresses.splice(0, 5);
+                    const address = addresses.slice(0, 5);
                     const cmb = Combinatorics.combination(address, 3);
                     Curation.nGramQuery(cmb, cb)
                 }catch(error){
@@ -226,18 +233,37 @@ class Curation{
                 }
             },
             (result, cb)=>{ // BI-GRAMS
+                console.log('bigrams');
                 if(result){
                     return cb(null, result)
                 }
                 try{
-                    const address = addresses.splice(0, 5);
+                    const address = addresses.slice(0, 5);
                     const cmb = Combinatorics.combination(address, 2);
                     Curation.nGramQuery(cmb, cb)
                 }catch(error){
                     console.log('ERROR:',error)
                     return cb(null, null) //No results
                 }
-            }//,
+            },
+            (result, cb)=>{ //UNI-GRAMS 
+              console.log('uni-grams!');
+              if(result){
+                return cb(null, result)
+              }
+              try{
+                  const address = addresses.filter((token)=>{
+                    return token.length > 4 || token == 'FAE';
+                  })
+                  const cmb = Combinatorics.combination(address, 1);
+                  Curation.nGramQuery(cmb, cb, 'places')
+              }catch(error){
+                  console.log('ERROR:',error)
+                  return cb(null, null) //No results
+              }
+            }
+            
+            //,
             // (result, cb)=>{ // BI-GRAMS
             //     if(result){
             //         return cb(null, result)
@@ -293,24 +319,23 @@ class Curation{
                 return cb(new Error('Not found geofence'));
             }
 
-            console.log('FOUND GEOFENCE ID:',result.rows[0].id);
+            console.log(' =========== FOUND GEOFENCE ID: =========',result.rows[0].id);
             const geofenceId = result.rows[0].id
             return cb(null, geofenceId)
         })
     }
     static googleGeocoder(data, city, cb){
         asyncF.mapSeries( data, (item, cb)=>{
+
+            if(item.geofenceId){
+              return cb(null, item);
+            }
             setTimeout(() => {
 
                 const preAddress = item['Direccion'].toString().toUpperCase();
                 console.log('preAddress:',preAddress)
-                const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
-                    return addresses.concat(address.split(' ').filter(d=>d.length));
-                }, []);
 
-                const addresss = addresses.map((address)=> Curation.commonCharactersForIntersections(address)).join(' ')+", GUAYAQUIL";
-
-                geocoder(preAddress+", GUAYAQUIL", (error, result)=>{
+                geocoder(preAddress, (error, result)=>{
                     if(error){
                         return cb(null, item);
                     }
@@ -349,7 +374,7 @@ class Curation{
             return cb(null, item);
         }
 
-        const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address))
+        const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address).trim())
             .filter(d=>{
             return (d.length &&
             d !== 'LA'  &&
@@ -365,11 +390,16 @@ class Curation{
             d !== 'MZ.' &&
             d !== 'AVAS' &&
             d !== 'EN' &&
-            d !== '.' 
+            d !== '.' && 
+            d !== 'ENTRE' &&
+            d !== 'EL'  
             )
         })
         .join('%')}%'`;
 
+        if (likeComposer == '%%'){
+          return cb(null, item);
+        }
          
         const query = `SELECT 
             ge.id as id,
@@ -391,7 +421,7 @@ class Curation{
         left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
             ge.city_id=${city} and cp.type='intersection' and
-            UPPER(cp.place_name) SIMILAR TO ${likeComposer}
+            cp.place_name LIKE ${likeComposer}
             `
 
         postq.queryMaster(query, (error, result)=>{
@@ -404,7 +434,7 @@ class Curation{
                 return cb(null, item);
             }
 
-            console.log('FOUND GEOFENCE ID:',result.rows[0].id);
+            console.log('============= FOUND GEOFENCE ID: ===========',result.rows[0].id);
             const geofenceId = result.rows[0].id
 
             cb(null, Object.assign({}, item, { geofenceId, geocoder: 'intersections' }))
@@ -446,12 +476,8 @@ class Curation{
                     const dia = diseases
                     .find((y)=>y.cie10_code == cie10);
 
-                    console.log('DIA:',dia)
-
                     const diseaseId = dia?dia.id:-1
                  
-                    console.log('AGE:',age)
-                    console.log('cie10:',cie10)
                     const ageId = age === 0? yearsRanges[0].id:yearsRanges
                     .find((y)=>parseInt(y.start_age) <= age && parseInt(y.end_age) >= age).id;
 
@@ -526,12 +552,12 @@ class Curation{
 
             //console.log('DESCRIPTION:',description);
 
-            const itemsExtra = Curation.commonCharacters(place_name)
+            const itemsExtra = Curation.commonCharactersForIntersections(place_name)
             .split(' ')
             .map((it)=>`${it}`.trim())
             .filter((it)=>it && it.length);
 
-            const items = Curation.commonCharacters(description)
+            const items = Curation.commonCharactersForIntersections(description)
             .split(' ')
             .map((it)=>`${it}`.trim())
             .filter((it)=>it && it.length)
@@ -557,7 +583,7 @@ class Curation{
                 return dataItem; 
             }
 
-            const address = Curation.commonCharacters(dataItem.Direccion);
+            const address = Curation.commonCharactersForIntersections(dataItem.Direccion);
             
             const entities = await manager.findEntities(
                 address,
@@ -578,7 +604,6 @@ class Curation{
             }
             return dataItem;
         })).then((dataProcessed) => {
-            console.log('dataProcessed:',dataProcessed)
             return cback(null, dataProcessed);
         })
         .catch((error)=>{
@@ -591,52 +616,64 @@ class Curation{
 
     static commonCharactersForIntersections(str){
         
-        return str.replace('SECTOR', '')
-        .replace(' AVA ', '')
+        return str.replace('SECTOR', ' ')
+        .replace(' AVA ', ' ')
          .replace('CDLA', '')
          .replace('CDLA.', '')
-         .replace('LA', '')
+         .replace(' LA ', ' ')
          .replace('PARROQUIA', '')
          .replace('COOP.', '')
+         .replace(' STA ', ' SANTA ')
+         .replace(' FCO ', ' FRANCISCO ')
+         .replace(' CANTON ', ' ')
+         .replace(' SL ', ' ')
+         .replace(' CLLEJON ', ' ')
          .replace('ENTRE', '')
-         .replace(' DEL ', '')
-         .replace(' LA ', '')
+         .replace(' DEL ', ' ')
+         .replace(' LA ', ' ')
          .replace('#', '')
-         .replace(' LO ', '')
-         .replace(' LOS ', '')
-         .replace(' 00 ', '')
-         .replace(' 0 ', '')
-         .replace(' 000 ', '')
-         .replace(' EN ', '')
-         .replace(' CLLJ. ')
-         .replace(' DE ', '')
-         .replace(' I ', '')
-         .replace(' EO ', '')
-         .replace(' LOS ', '')
-         .replace('COOP', '')
-         .replace(' MZ ', '')
-         .replace(' VIL ', '')
-         .replace(' CD ', '')
-         .replace(' BLOQ ', '')
-         .replace(' BLOQUE ', '')
-         .replace(' CAAR ', '')
-         .replace(' VILLA ', '')
-         .replace(' E/ ', '')
-         .replace(' CLL. ', '')
-         .replace(' CLL ', '')
-         .replace(' E. ', '')
-         .replace(' MZ. ', '')
-         .replace(' ETAPA ', '')
-         .replace('URB.', '')
-         .replace(' BQ. ', '')
-         .replace(' AVA. ', '')
-         .replace(' ERATIVA ', '')
-         .replace(' EN ', '')
-         .replace(' I ', '')
-         .replace(' . ', '')
-         .replace(/[^\w\s]|_/g, "")
+         .replace(' LO ', ' ')
+         .replace(' LOS ', ' ')
+         .replace(' S ', ' ')
+         .replace(' 00 ', ' ')
+         .replace(' 0 ', ' ')
+         .replace(' 000 ', ' ')
+         .replace(' EN ', ' ')
+         .replace(' CLLJ. ', ' ')
+         .replace(' DE ', ' ')
+         .replace(' I ', ' ')
+         .replace(' EO ', ' ')
+         .replace(' LOS ', ' ')
+         .replace('COOP', ' ')
+         .replace(' MZ ', ' ')
+         .replace(' VIL ', ' ')
+         .replace(' CD ', ' ')
+         .replace(' BLOQ ', ' ')
+         .replace(' BLOQUE ', ' ')
+         .replace(' CAAR ', ' ')
+         .replace(' VILLA ', ' ')
+         .replace(' E/ ', ' ')
+         .replace(' CLL. ', ' ')
+         .replace(' CLL ', ' ')
+         .replace(' BLOQUES ', ' ')
+         .replace(' CALLE ', ' ')
+         .replace(' E. ', ' ')
+         .replace(' MZ. ', ' ')
+         .replace(' ETAPA ', ' ')
+         .replace('URB.', ' ')
+         .replace('URB', ' ')
+         .replace(' BQ. ', ' ')
+         .replace(' AVA. ', ' ')
+         .replace(' ERATIVA ', ' ')
+         .replace(' EN ', ' ')
+         .replace(' BLQ ', ' ')
+         .replace(' MZN ', ' ')
+         .replace(' I ', ' ')
+         .replace(' . ', ' ')
+         .replace(' BARRIO ', ' ')
+         .replace(/[^\w\s]|_/g, " ")
          .replace(/\s+/g, " ")
-         .replace("\\d[a-zA-Z]", "")
+        //  .replace("\\d[a-zA-Z]", "")
          .replaceAlfa()
          .trim()
      }
