@@ -11,16 +11,16 @@ const masterConfiguration = Object.assign({}, master, {
 const masterPoolClusterConfiguration = new postg(Object.assign({}, master, {
   ssl: false,
   max: 20, // set pool max size to 20
-  idleTimeoutMillis: 60000, // close idle clients after 1 second
-  connectionTimeoutMillis: 60000, // return an error after 1 second if connection could not be established
+  idleTimeoutMillis: 600000000, // close idle clients after 1 second
+  connectionTimeoutMillis: 600000000, // return an error after 1 second if connection could not be established
 }));
 
 
 const slaveClusterConfiguration = new postg(Object.assign({}, slave, {
   ssl: false,
   max: 20, 
-  idleTimeoutMillis: 60000, 
-  connectionTimeoutMillis: 60000, 
+  idleTimeoutMillis: 600000000, 
+  connectionTimeoutMillis: 600000000, 
 }));
 
 
@@ -60,16 +60,19 @@ function query(pattern, sql, values, callback) {
 }
 
 
-function getConnect(callback) {
+function getConnect(cb) {
+
   const URL = `postgres://${masterConfiguration.user}:${masterConfiguration.password}@${masterConfiguration.host}:${masterConfiguration.port}/${masterConfiguration.database}`
-  pg.connect(URL, 
-  (error, client)=>{
+
+  const client = new pg.Client(URL);
+  client.connect( 
+  (error)=>{
     if (error) {
       console.log('ERROR:',error);
-      callback(error);
+      cb(error);
       return;
     }
-    callback(null, client);
+    cb(null, client);
   })
 }
 
