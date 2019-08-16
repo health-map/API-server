@@ -37,7 +37,7 @@ class Geogroup{
             whereConditions.push(` ge.privacy_level <= ${privacyLevel} `);
         } 
         if (q && q.length && typeof(q) === 'string'){
-            whereConditions.push(` ge."name" LIKE '%${q}%' `);
+            whereConditions.push(` UPPER(ge."name") LIKE '%${q.toUpperCase()}%' `);
         }
         
         if (whereConditions.length){

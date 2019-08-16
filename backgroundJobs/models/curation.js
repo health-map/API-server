@@ -56,7 +56,7 @@ class Curation{
             }).filter((d)=>d.place_name)
             .filter((d)=>d.type === 'place');
 
-            const dataTotest = data.filter((d, i)=>i<1000);
+            const dataTotest = data.filter((d, i)=>true);
 
             let summary = {
                 totalPacients: dataTotest.length
@@ -138,7 +138,8 @@ class Curation{
             healthmap.geofence ge           
             left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
-            ${ type === 'places' ? "cp.type = 'place' AND " : ''}  
+            ${ type === 'place' ? "cp.type = 'place' AND " : ''}  
+            ${ type === 'intersection' ? "cp.type = 'intersection' AND " : ''}  
             (${composedLike}) `
 
             postq.queryMaster(query, (error, result)=>{
@@ -174,10 +175,12 @@ class Curation{
         d !== 'LOS' &&
         d !== 'ETAPA' &&
         d !== 'AVA' &&
+        d !== 'AV' &&
         d !== 'AVA.' &&
         d !== 'MZ' &&
         d !== 'MZB' &&
         d !== 'CALLEJON' &&
+        d !== 'CALLE' &&
         d !== 'DE' &&
         d !== 'ENTRE' &&
         d !== 'MZ.' &&
@@ -196,7 +199,7 @@ class Curation{
             return cb(null, item); 
         }
 
-        const preAddress = uc(item['Direccion'].toString().toUpperCase());
+        const preAddress = item['Direccion'].toString().toUpperCase();
         console.log('preAddress:',preAddress)
         const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
             return addresses.concat(address.split(' '));
@@ -224,9 +227,12 @@ class Curation{
                 // }
                 console.log('TRIGRAMS');
                 try{
-                    const address = addresses.slice(0, 5);
+                    let address = addresses.slice(0, 5);
+                    address = address.filter((t) => {
+                      return t.length > 2;
+                    })
                     const cmb = Combinatorics.combination(address, 3);
-                    Curation.nGramQuery(cmb, cb)
+                    Curation.nGramQuery(cmb, cb, 'place')
                 }catch(error){
                     console.log('ERROR:',error)
                     return cb(null, null) //No results
@@ -238,9 +244,12 @@ class Curation{
                     return cb(null, result)
                 }
                 try{
-                    const address = addresses.slice(0, 5);
+                    let address = addresses.slice(0, 5);
+                    address = address.filter((t) => {
+                      return t.length > 2;
+                    })
                     const cmb = Combinatorics.combination(address, 2);
-                    Curation.nGramQuery(cmb, cb)
+                    Curation.nGramQuery(cmb, cb, 'place')
                 }catch(error){
                     console.log('ERROR:',error)
                     return cb(null, null) //No results
@@ -256,12 +265,40 @@ class Curation{
                     return token.length > 4 || token == 'FAE';
                   })
                   const cmb = Combinatorics.combination(address, 1);
-                  Curation.nGramQuery(cmb, cb, 'places')
+                  Curation.nGramQuery(cmb, cb, 'place')
               }catch(error){
                   console.log('ERROR:',error)
                   return cb(null, null) //No results
               }
-            }
+            },
+            (result, cb)=>{ // BI-GRAMS
+              console.log('bigrams intersections');
+              if(result){
+                  return cb(null, result)
+              }
+              try{
+                  let address = addresses.slice(0, 5);
+                  const cmb = Combinatorics.combination(address, 2);
+                  Curation.nGramQuery(cmb, cb, 'intersection')
+              }catch(error){
+                  console.log('ERROR:',error)
+                  return cb(null, null) //No results
+              }
+            },
+            (result, cb)=>{ // BI-GRAMS
+              console.log('trigrams intersections');
+              if(result){
+                  return cb(null, result)
+              }
+              try{
+                  let address = addresses.slice(0, 5);
+                  const cmb = Combinatorics.combination(address, 3);
+                  Curation.nGramQuery(cmb, cb, 'intersection')
+              }catch(error){
+                  console.log('ERROR:',error)
+                  return cb(null, null) //No results
+              }
+            },
             
             //,
             // (result, cb)=>{ // BI-GRAMS
@@ -364,7 +401,7 @@ class Curation{
         }
 
         console.log('item:',item)
-        const preAddress = uc(item['Direccion'].toString().toUpperCase());
+        const preAddress = item['Direccion'].toString().toUpperCase();
         console.log('preAddress:',preAddress)
         const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
             return addresses.concat(address.split(' ').filter(d=>d.length));
@@ -505,13 +542,13 @@ class Curation{
                         }
                     }
                     if(item.geofenceId === -1 || !item.geofenceId){
-                        cback(null, options);
+                      return cback(null, options);
                     }
                     if(item.diseaseId === -1){
-                      cback(null, options);
+                      return cback(null, options);
                     }
                     if(item.ageId === -1 || !item.ageId){
-                      cback(null, options);
+                      return cback(null, options);
                     }
 
                     Patient.createPatient(options, (error, results)=>{
@@ -662,6 +699,7 @@ class Curation{
          .replace(' CLL. ', ' ')
          .replace(' CLL ', ' ')
          .replace(' BLOQUES ', ' ')
+         .replace(' CALLEJON ', ' ')
          .replace(' CALLE ', ' ')
          .replace(' E. ', ' ')
          .replace(' MZ. ', ' ')
@@ -670,6 +708,7 @@ class Curation{
          .replace('URB', ' ')
          .replace(' BQ. ', ' ')
          .replace(' AVA. ', ' ')
+         .replace(' AV ', ' ')
          .replace(' ERATIVA ', ' ')
          .replace(' EN ', ' ')
          .replace(' BLQ ', ' ')

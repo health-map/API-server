@@ -37,7 +37,7 @@ class Disease{
             whereConditions.push(` main.privacy_level <= ${privacyLevel} `)
         } 
         if (q && q.length && typeof(q) === 'string'){
-            whereConditions.push(` main."name" LIKE  '%${q}%' `)
+            whereConditions.push(` UPPER(main."name") LIKE  '%${q.toUpperCase()}%' `)
         }
         
         if (whereConditions.length){
