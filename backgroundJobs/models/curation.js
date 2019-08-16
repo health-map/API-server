@@ -386,7 +386,7 @@ class Curation{
                         return cb( null, Object.assign({}, item, { geofenceId, geocoder: 'google' }))
                     })
                 })
-            }, 200);
+            }, 100);
         }, (error, results)=>{
             if(error){
                 return cb(error);
@@ -517,8 +517,10 @@ class Curation{
 
                     const diseaseId = dia?dia.id:-1
                  
-                    const ageId = age === 0? yearsRanges[0].id:yearsRanges
-                    .find((y)=>parseInt(y.start_age) <= age && parseInt(y.end_age) >= age).id;
+                    let ageId = age === 0? yearsRanges[0] : yearsRanges
+                    .find((y)=>parseInt(y.start_age) <= age && parseInt(y.end_age) >= age);
+
+                    ageId = ageId ? ageId.id : 4;
 
                     d.ageId = ageId;
                     d.diseaseId = diseaseId;
