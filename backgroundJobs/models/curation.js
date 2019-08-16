@@ -111,7 +111,7 @@ class Curation{
                 const dataMissingGeocoded = dataProcessed.filter(d=>!d.geofenceId)
 
                 summary.totalGeocodedPatients = dataFiltered.length;
-
+                console.log('SUMMARY:',summary)
                 Curation.insertPatients(dataFiltered, (error, result)=>{
                                 
                     if(error){
@@ -504,14 +504,20 @@ class Curation{
                             registeredDate: time
                         }
                     }
-                    if(item.geofenceId === -1){
+                    if(item.geofenceId === -1 || !item.geofenceId){
                         cback(null, options);
+                    }
+                    if(item.diseaseId === -1){
+                      cback(null, options);
+                    }
+                    if(item.ageId === -1 || !item.ageId){
+                      cback(null, options);
                     }
 
                     Patient.createPatient(options, (error, results)=>{
                         if(error){
                             console.log('ERROR:',error);
-                            return cback(error)
+                            return cback(null, []);
                         }
                         cback(null, results);
                     });
