@@ -42,6 +42,7 @@ class Curation{
             healthmap.geofence ge 
         left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
+            ge.granularity_level = 7 AND
             ge.city_id=${city} and cp.type='place'
         `
         
@@ -140,6 +141,7 @@ class Curation{
             healthmap.geofence ge           
             left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
+            ge.granularity_level = 7 AND
             ${ type === 'place' ? "cp.type = 'place' AND " : ''}  
             ${ type === 'intersection' ? "cp.type = 'intersection' AND " : ''}  
             (${composedLike}) `
@@ -459,6 +461,7 @@ class Curation{
             healthmap.geofence ge 
         left join healthmap.city_place cp ON cp.related_geofence=ge.id
         WHERE 
+            ge.granularity_level = 7 AND
             ge.city_id=${city} and cp.type='intersection' and
             cp.place_name LIKE ${likeComposer}
             `
