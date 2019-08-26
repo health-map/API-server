@@ -18,7 +18,7 @@ class Job{
 
         // TODO: we need to consider TTL also
         const payload = {
-            type: 'DataProcess.curation',
+            type: data.type || 'DataProcess.curation' ,
             data,
             options: {
                 searchKeys: ['userId'],

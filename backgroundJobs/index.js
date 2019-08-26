@@ -1,5 +1,7 @@
 const kue = require('kue');
 const cluster = require('cluster');
+const fs = require('fs');
+const Upload = require('./libs/upload');
 
 if(cluster.isMaster) {
     const numWorkers = (process.env.SERVER_ENV === "production") ?
@@ -25,6 +27,7 @@ if(cluster.isMaster) {
 }else{
 
     const Curation = require('./models/curation');
+    const Incidences = require('./../models/incidence');
     
     const queue = kue.createQueue({
         redis: {
@@ -58,6 +61,47 @@ if(cluster.isMaster) {
                     return done(error);
                 }
                 done(null, results);
+            })
+            
+        });
+    });
+
+
+    queue.process('DataProcess.upload', 5, (job, done) => {
+
+        const domain = require('domain').create();
+
+        domain.on('error', (jobError) => {
+            console.log(jobError);
+            done(jobError);
+        });
+
+        domain.run(() => {
+            job.progress(0, 100, {status: 'starting'});
+
+            Incidences.getLoaderIncidences(job.data, (error, results)=>{
+                if(error){
+                    return done(error);
+                }
+
+                if(!results){
+                    done(null, []);
+                }
+
+                const {
+                    data: { incidences }
+                } = results
+
+                console.log('RESULTS:',incidences)
+                let data = JSON.stringify(incidences);
+                fs.writeFileSync('results.json', data);
+
+                Upload.run((error)=>{
+                    if(error){
+                        return done(error);
+                    }
+                    done(null, incidences);
+                }); 
             })
             
         });

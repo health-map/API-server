@@ -10,9 +10,11 @@ const Job = require('../models/job');
 const authAPI = require('./../middlewares/auth');
 const langMiddleware = require('./../middlewares/lang');
 
+
+
 router.post('/data', authAPI, langMiddleware, (req, res) => {
 
-    const  { data } = req.body;
+    let  { data } = req.body;
   
     if(!data){
         return res.status(412).json({
