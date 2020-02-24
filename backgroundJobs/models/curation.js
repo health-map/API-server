@@ -588,7 +588,7 @@ class Curation{
                         patient: {
                             cityId: 1,
                             institutionId: item[COLUMNA_INSTITUCION] ? item[COLUMNA_INSTITUCION] : 1,
-                            department: item[COLUMNA_DEPARTAMENT] ? [COLUMNA_DEPARTAMENT] : 1,
+                            department: item[COLUMNA_DEPARTAMENT] ? item[COLUMNA_DEPARTAMENT] : 1,
                             gender: item[COLUMNA_GENERO] ? item[COLUMNA_GENERO] : 'N', 
                             diseaseId: item.diseaseId,
                             geofenceId: item.geofenceId,
