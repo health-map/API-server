@@ -18,6 +18,18 @@ String.prototype.replaceAlfa = function(){
     return Number.isNaN(number)?this:`${number}`;
 };
 
+const COLUMNA_EDAD = 'edad';
+const COLUMNA_ETNIA = 'etnia';
+const COLUMNA_DEPARTAMENT = 'department';
+const COLUMNA_EDAD_TIPO = 'tipo_edad';
+const COLUMNA_CIE10 = 'CIE10';
+const COLUMNA_DIRECCION = 'direccion';
+const COLUMNA_GENERO = 'genero';
+const COLUMNA_INGRESO = 'fecha_ingreso';
+const COLUMNA_INSTITUCION = 'institution';
+
+
+
 class Curation{
 
 
@@ -58,7 +70,7 @@ class Curation{
             .filter((d)=>d.type === 'place');
 
             // filter adresses with less than 4 characters
-            const dataTotest = data.filter((d, i)=>d['Direccion'].length > 4);
+            const dataTotest = data.filter((d, i)=>d[COLUMNA_DIRECCION].length > 4);
 
             let summary = {
                 totalPacients: dataTotest.length
@@ -121,7 +133,7 @@ class Curation{
                     }
                     summary.savedPatients = result.length;
                     console.log('SUMMARY:',summary);
-                    console.log('NOT FOUND ADDRESSES:',dataMissingGeocoded.map(({ Direccion })=>Direccion).join('\n\t'));
+                    console.log('NOT FOUND ADDRESSES:',dataMissingGeocoded.map((d)=>d[COLUMNA_DIRECCION]).join('\n\t'));
                     console.log('SUMMARY:',summary)
                     console.log('DONE!')
                     return cb(null, summary)
@@ -203,7 +215,7 @@ class Curation{
             return cb(null, item); 
         }
 
-        const preAddress = item['Direccion'].toString().toUpperCase();
+        const preAddress = item[COLUMNA_DIRECCION].toString().toUpperCase();
         console.log('preAddress:',preAddress)
         const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
             return addresses.concat(address.split(' '));
@@ -326,7 +338,7 @@ class Curation{
                 return cb(null, item);
             }
 
-            console.log('PLACESGEOCODER:',item['Direccion'],'GEO:',geofenceId)
+            console.log('PLACESGEOCODER:',item[COLUMNA_DIRECCION],'GEO:',geofenceId)
             return cb( null, Object.assign({}, item, { geofenceId, geocoder: 'placesgeocoder' }))
         })
 
@@ -373,7 +385,7 @@ class Curation{
             }
             setTimeout(() => {
 
-                const preAddress = item['Direccion'].toString().toUpperCase();
+                const preAddress = item[COLUMNA_DIRECCION].toString().toUpperCase();
                 console.log('preAddress:',preAddress)
 
                 geocoder(preAddress, (error, result)=>{
@@ -405,7 +417,7 @@ class Curation{
         }
 
         console.log('item:',item)
-        const preAddress = item['Direccion'].toString().toUpperCase();
+        const preAddress = item[COLUMNA_DIRECCION].toString().toUpperCase();
         console.log('preAddress:',preAddress)
         const addresses = preAddress.split(' Y ').reduce(( addresses, address)=>{
             return addresses.concat(address.split(' ').filter(d=>d.length));
@@ -515,9 +527,9 @@ class Curation{
                     .filter((r)=>r.period_type==='meses')   
                 
                 const withAge = data.map((d)=>{
-                    const age = parseInt(d['Edad']);
-                    const cie10 = d['CIE10'];
-                    const ageType = d['Edad Tipo'];
+                    const age = parseInt(d[COLUMNA_EDAD]);
+                    const cie10 = d[COLUMNA_CIE10];
+                    const ageType = d[COLUMNA_EDAD_TIPO];
 
                     const dia = diseases
                         .find((y)=>y.cie10_code == cie10);
@@ -570,19 +582,19 @@ class Curation{
             (dataWithAge, cb)=>{
                 return asyncF.mapSeries(dataWithAge, (item, cback)=>{
 
-                    const time = moment(new Date(item['Fecha Ingreso'])).format('YYYY-MM-DD HH:mm:ss');
+                    const time = moment(new Date(item[COLUMNA_INGRESO])).format('YYYY-MM-DD HH:mm:ss');
                    
                     const options  = {
                         patient: {
                             cityId: 1,
-                            institutionId: item.institution ? item.institution : 1,
-                            department: item.department ? item.department : 1,
-                            gender: item.genero ? item.genero : 'N', 
+                            institutionId: item[COLUMNA_INSTITUCION] ? item[COLUMNA_INSTITUCION] : 1,
+                            department: item[COLUMNA_DEPARTAMENT] ? [COLUMNA_DEPARTAMENT] : 1,
+                            gender: item[COLUMNA_GENERO] ? item[COLUMNA_GENERO] : 'N', 
                             diseaseId: item.diseaseId,
                             geofenceId: item.geofenceId,
-                            etnia: item['Etnia'] ? item['Etnia'] : 'DESCONOCIDA',
-                            rawAge: item['Edad'] ? item['Edad'] : -1,
-                            rawAgeType: item['Tipo Edad'] ? item['Tipo Edad'] : 'años',
+                            etnia: item[COLUMNA_ETNIA] ? item[COLUMNA_ETNIA] : 'DESCONOCIDA',
+                            rawAge: item[COLUMNA_EDAD] ? item[COLUMNA_EDAD] : -1,
+                            rawAgeType: item[COLUMNA_EDAD_TIPO] ? item[COLUMNA_EDAD_TIPO] : 'años',
                             ageId: item.ageId,
                             registeredDate: time
                         }
@@ -673,7 +685,7 @@ class Curation{
                 return dataItem; 
             }
 
-            const address = Curation.commonCharactersForIntersections(dataItem.Direccion);
+            const address = Curation.commonCharactersForIntersections(dataItem[COLUMNA_DIRECCION]);
             
             const entities = await manager.findEntities(
                 address,
@@ -685,7 +697,7 @@ class Curation{
             entities.find((e)=>!e.resolution && e.len > 4)
             :undefined
 
-            console.log('Direccion:',dataItem.Direccion, ' \n Match:', entity);
+            console.log('Direccion:',dataItem[COLUMNA_DIRECCION], ' \n Match:', entity);
 
             dataItem.matches = entity;
             if(dataItem.matches){
