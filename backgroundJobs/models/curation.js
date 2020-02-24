@@ -582,7 +582,7 @@ class Curation{
             (dataWithAge, cb)=>{
                 return asyncF.mapSeries(dataWithAge, (item, cback)=>{
 
-                    const time = new Date(item[COLUMNA_INGRESO]);
+                    const time = moment(new Date(item[COLUMNA_INGRESO])).format('YYYY-MM-DD HH:mm:ss');
                    
                     const options  = {
                         patient: {
