@@ -541,7 +541,9 @@ class Curation{
                         if (ageType === 'años'){
                             ageId = 
                             age === 0 ? 
-                            yearsRanges[0] : 
+                            yearsRanges.find((y) => {
+                                return parseInt(y.start_age) === 0;
+                            }) : 
                             yearsRanges
                                 .find((y) => {
                                     return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
@@ -553,12 +555,16 @@ class Curation{
                                     return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
                                 });
                         } else { // dias
-                            ageId = yearsRanges[0]
+                            ageId = yearsRanges.find((y) => {
+                                return parseInt(y.start_age) === 0;
+                            });
                         }
                     } else {
                         ageId = 
                             age === 0 ? 
-                            yearsRanges[0] : 
+                            yearsRanges.find((y) => {
+                                return parseInt(y.start_age) === 0;
+                            }) : 
                             yearsRanges
                                 .find((y) => {
                                     return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
@@ -583,6 +589,10 @@ class Curation{
                 return asyncF.mapSeries(dataWithAge, (item, cback)=>{
 
                     const time = moment(new Date(item[COLUMNA_INGRESO])).format('YYYY-MM-DD HH:mm:ss');
+
+                    console.log('HMMMMM');
+                    console.log(item[COLUMNA_INGRESO]);
+                    console.log(time);
                    
                     const options  = {
                         patient: {
