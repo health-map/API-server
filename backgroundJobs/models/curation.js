@@ -509,19 +509,54 @@ class Curation{
 
                 
                 const yearsRanges = ranges
-                .filter((r)=>r.period_type==='años')
+                    .filter((r)=>r.period_type==='años')
+
+                const monthRanges = ranges
+                    .filter((r)=>r.period_type==='meses')   
                 
                 const withAge = data.map((d)=>{
                     const age = parseInt(d['Edad']);
                     const cie10 = d['CIE10'];
+                    const ageType = d['Edad Tipo'];
 
                     const dia = diseases
-                    .find((y)=>y.cie10_code == cie10);
+                        .find((y)=>y.cie10_code == cie10);
 
-                    const diseaseId = dia?dia.id:-1
-                 
-                    let ageId = age === 0? yearsRanges[0] : yearsRanges
-                    .find((y)=>parseInt(y.start_age) <= age && parseInt(y.end_age) >= age);
+                    const diseaseId = dia ? dia.id : -1;
+                    
+                    let ageId
+                    if (ageType){
+                        if (ageType === 'años'){
+                            ageId = 
+                            age === 0 ? 
+                            yearsRanges[0] : 
+                            yearsRanges
+                                .find((y) => {
+                                    return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
+                                });
+                        } else if (ageType === 'meses'){
+                            ageId = 
+                            monthRanges
+                                .find((y) => {
+                                    return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
+                                });
+                        } else { // dias
+                            ageId = yearsRanges[0]
+                        }
+                    } else {
+                        ageId = 
+                            age === 0 ? 
+                            yearsRanges[0] : 
+                            yearsRanges
+                                .find((y) => {
+                                    return parseInt(y.start_age) <= age && parseInt(y.end_age) > age
+                                });
+                    }
+
+                    if (!ageId){
+                        console.log("BAD AGE");
+                    }
+
 
                     ageId = ageId ? ageId.id : 4;
 
@@ -540,10 +575,14 @@ class Curation{
                     const options  = {
                         patient: {
                             cityId: 1,
-                            institutionId: 1,
-                            department: 1,
+                            institutionId: item.institution ? item.institution : 1,
+                            department: item.department ? item.department : 1,
+                            gender: item.genero ? item.genero : 'N', 
                             diseaseId: item.diseaseId,
                             geofenceId: item.geofenceId,
+                            etnia: item['Etnia'] ? item['Etnia'] : 'DESCONOCIDA',
+                            rawAge: item['Edad'] ? item['Edad'] : -1,
+                            rawAgeType: item['Tipo Edad'] ? item['Tipo Edad'] : 'años',
                             ageId: item.ageId,
                             registeredDate: time
                         }

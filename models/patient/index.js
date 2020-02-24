@@ -17,7 +17,10 @@ class Patient{
             geofenceId,
             ageId,
             gender = 'N',
-            registeredDate
+            etnia = 'DESCONOCIDA',
+            registeredDate,
+            rawAge = -1,
+            rawAgeType = 'N/A',
         } = patient;
 
         const values = [
@@ -30,7 +33,10 @@ class Patient{
             gender,
             registeredDate,
             'now()', 
-            'now()'
+            'now()',
+            etnia,
+            rawAge,
+            rawAgeType
         ]
 
         console.log('VALUES:',values);
@@ -48,7 +54,10 @@ class Patient{
             gender,
             registered_at,
             created_at,
-            updated_at
+            updated_at,
+            etnia,
+            edad_raw,
+            edad_raw_type
         )
         VALUES(
             $1,
@@ -60,7 +69,10 @@ class Patient{
             $7,
             $8,
             $9,
-            $10
+            $10,
+            $11,
+            $12,
+            $13
         ) RETURNING id `
         postg.queryMaster(query, values, (error, result)=>{
             if(error){
