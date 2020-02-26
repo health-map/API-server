@@ -427,6 +427,8 @@ class Curation{
             return cb(null, item);
         }
 
+        console.log(addresses)
+
         const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address).trim())
             .filter(d=>{
             return (d.length && d.length > 2 &&
@@ -438,6 +440,7 @@ class Curation{
             d !== 'LOS' &&
             d !== 'ETAPA' &&
             d !== 'VILLA' &&
+            d !== ' VILLA ' &&
             d !== 'AVA' &&
             d !== 'AVA.' &&
             d !== 'MZ' &&
