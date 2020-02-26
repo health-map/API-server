@@ -429,7 +429,7 @@ class Curation{
 
         const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address).trim())
             .filter(d=>{
-            return (d.length &&
+            return (d.length && d.length > 2 &&
             d !== 'LA'  &&
             d !== 'PARROQUIA' &&
             d !== 'COOP' &&
@@ -437,6 +437,7 @@ class Curation{
             d !== 'DEL' &&
             d !== 'LOS' &&
             d !== 'ETAPA' &&
+            d !== 'VILLA' &&
             d !== 'AVA' &&
             d !== 'AVA.' &&
             d !== 'MZ' &&
@@ -445,8 +446,25 @@ class Curation{
             d !== 'EN' &&
             d !== '.' && 
             d !== 'ENTRE' &&
-            d !== 'EL'  
-            )
+            d !== 'EL'  && 
+            d !== 'CDLA' && 
+            d !== 'CDLA.' && 
+            d !== 'LA' &&
+            d !== 'PARROQUIA' &&
+            d !== 'CANTON' &&
+            d !== 'SL' &&
+            d !== 'CLLEJON' &&
+            d !== 'CLLJ.' &&
+            d !== 'EO' &&
+            d !== 'BLOQUE' &&
+            d !== 'BLOQ' && 
+            d !== 'BLOQUES' &&
+            d !== 'URB' &&
+            d !== 'URB.' &&
+            d !== 'BQ' &&
+            d !== 'MZN' &&
+            d !== 'MZN.' &&
+            d !== 'VIL' )
         })
         .join('%')}%'`;
 
@@ -811,6 +829,61 @@ class Curation{
         .replace(' 8 ', '')
         .replace(' 9 ', '')
         .replace(' 10 ', '')
+        .replace('sector', ' ')
+        .replace(' ava ', ' ')
+        .replace('cdla', '')
+        .replace('cdla.', '')
+        .replace(' la ', ' ')
+        .replace('parroquia', '')
+        .replace('coop.', '')
+        .replace(' sta ', ' santa ')
+        .replace(' fco ', ' francisco ')
+        .replace(' canton ', ' ')
+        .replace(' sl ', ' ')
+        .replace(' cllejon ', ' ')
+        .replace('entre', '')
+        .replace(' del ', ' ')
+        .replace(' la ', ' ')
+        .replace('#', '')
+        .replace(' los ', ' ')
+        .replace(' 00 ', ' ')
+        .replace(' 0 ', ' ')
+        .replace(' 000 ', ' ')
+        .replace(' en ', ' ')
+        .replace(' cllj. ', ' ')
+        .replace(' de ', ' ')
+        .replace(' i ', ' ')
+        .replace(' eo ', ' ')
+        .replace(' los ', ' ')
+        .replace('coop', ' ')
+        .replace(' mz ', ' ')
+        .replace(' vil ', ' ')
+        .replace(' cd ', ' ')
+        .replace(' bloq ', ' ')
+        .replace(' bloque ', ' ')
+        .replace(' caar ', ' ')
+        .replace(' villa ', ' ')
+        .replace(' e/ ', ' ')
+        .replace(' cll. ', ' ')
+        .replace(' cll ', ' ')
+        .replace(' bloques ', ' ')
+        .replace(' callejon ', ' ')
+        .replace(' calle ', ' ')
+        .replace(' e. ', ' ')
+        .replace(' mz. ', ' ')
+        .replace(' etapa ', ' ')
+        .replace('urb.', ' ')
+        .replace('urb', ' ')
+        .replace(' bq. ', ' ')
+        .replace(' ava. ', ' ')
+        .replace(' av ', ' ')
+        .replace(' erativa ', ' ')
+        .replace(' en ', ' ')
+        .replace(' blq ', ' ')
+        .replace(' mzn ', ' ')
+        .replace(' i ', ' ')
+        .replace(' . ', ' ')
+        .replace(' barrio ', ' ')
     }
     
 }
