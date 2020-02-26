@@ -174,7 +174,7 @@ class Curation{
 
     static filterShortWords(d){
 
-        return (d.length && d.length > 2 &&
+        return (d.length &&
         d !== 'LA'  &&
         d !== 'PARROQUIA' &&
         d !== '00' &&
@@ -460,7 +460,7 @@ class Curation{
 
         const likeComposer = `'%${addresses.map((address)=> Curation.commonCharactersForIntersections(address).trim())
             .filter(d=>{
-            return (d.length && d.length > 2 &&
+            return (d.length &&
             d !== 'LA'  &&
             d !== 'PARROQUIA' &&
             d !== 'COOP' &&
@@ -776,7 +776,9 @@ class Curation{
          .replace('PARROQUIA', '')
          .replace('COOP.', '')
          .replace(' STA ', ' SANTA ')
+         .replace(' STA. ', ' SANTA ')
          .replace(' FCO ', ' FRANCISCO ')
+         .replace(' FCO. ', ' FRANCISCO ')
          .replace(' CANTON ', ' ')
          .replace(' SL ', ' ')
          .replace(' CLLEJON ', ' ')
@@ -821,6 +823,26 @@ class Curation{
          .replace(' ERATIVA ', ' ')
          .replace(' EN ', ' ')
          .replace(' BLQ ', ' ')
+         .replace('1ERA.', '1')
+         .replace('2DA.', '2')
+         .replace('3RA.', '3')
+         .replace('4TA.', '4')
+         .replace('5TA.', '5')
+         .replace('6TA.', '6')
+         .replace('7MA.', '7')
+         .replace('9NA.', '9')
+         .replace('8VA.', '8')
+         .replace('10MA', '10')
+         .replace('10MA.', '10')
+         .replace('1ERA', '1')
+         .replace('2DA', '2')
+         .replace('3RA', '3')
+         .replace('4TA', '4')
+         .replace('5TA', '5')
+         .replace('6TA', '6')
+         .replace('7MA', '7')
+         .replace('9NA', '9')
+         .replace('8VA', '8')
          .replace(' MZN ', ' ')
          .replace(' I ', ' ')
          .replace(' . ', ' ')
