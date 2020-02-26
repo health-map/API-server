@@ -174,7 +174,7 @@ class Curation{
 
     static filterShortWords(d){
 
-        return (d.length &&
+        return (d.length && d.length > 2 &&
         d !== 'LA'  &&
         d !== 'PARROQUIA' &&
         d !== '00' &&
@@ -206,6 +206,35 @@ class Curation{
         d !== 'AVAS' &&
         d !== 'EN' &&
         d !== 'BARRIO' &&
+        d !== 'VILLA' &&
+        d !== ' VILLA ' &&
+        d !== 'AVA' &&
+        d !== 'AVA.' &&
+        d !== 'MZ' &&
+        d !== 'MZ.' &&
+        d !== 'AVAS' &&
+        d !== 'EN' &&
+        d !== '.' && 
+        d !== 'ENTRE' &&
+        d !== 'EL'  && 
+        d !== 'CDLA' && 
+        d !== 'CDLA.' && 
+        d !== 'LA' &&
+        d !== 'PARROQUIA' &&
+        d !== 'CANTON' &&
+        d !== 'SL' &&
+        d !== 'CLLEJON' &&
+        d !== 'CLLJ.' &&
+        d !== 'EO' &&
+        d !== 'BLOQUE' &&
+        d !== 'BLOQ' && 
+        d !== 'BLOQUES' &&
+        d !== 'URB' &&
+        d !== 'URB.' &&
+        d !== 'BQ' &&
+        d !== 'MZN' &&
+        d !== 'MZN.' &&
+        d !== 'VIL' &&
         d !== '.')
     }
 
