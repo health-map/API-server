@@ -1,6 +1,8 @@
-const postg = require('../../db/postgre');
 const async = require('async');
-  
+const postg = require('../../db/postgre');
+const Age = require('./../age');
+const Disease = require('./../disease');
+
 class Patient{
 
     static createPatient(options, cb) {
@@ -21,6 +23,9 @@ class Patient{
             registeredDate,
             rawAge = -1,
             rawAgeType = 'N/A',
+            latitude,
+            longitude,
+            geo_type = 'geozone'
         } = patient;
 
         const values = [
@@ -36,7 +41,10 @@ class Patient{
             'now()',
             etnia,
             rawAge,
-            rawAgeType
+            rawAgeType,
+            latitude,
+            longitude,
+            geo_type
         ]
 
         console.log('VALUES:',values);
@@ -57,7 +65,10 @@ class Patient{
             updated_at,
             etnia,
             edad_raw,
-            edad_raw_type
+            edad_raw_type,
+            latitude,
+            longitude,
+            geo_type
         )
         VALUES(
             $1,
@@ -72,7 +83,10 @@ class Patient{
             $10,
             $11,
             $12,
-            $13
+            $13,
+            $14,
+            $15,
+            $16
         ) RETURNING id `
         postg.queryMaster(query, values, (error, result)=>{
             if(error){
@@ -85,9 +99,248 @@ class Patient{
             }
             const newPatientId = result.rows[0].id;
             cb(null, Object.assign({}, patient, { id: newPatientId }));
-        });
-          
+        }); 
     }
 
+    static getPatientsPoints(options, cb) {
+
+        console.log('OPTIONS:', options);
+      
+        const  { 
+            ageRange,
+            gender,
+            cie10,
+            institution,
+            department,
+            startDate,
+            endDate,
+        } = options;
+      
+        const wherePatients = [];
+      
+        wherePatients.push(` p.enabled = TRUE `);
+        wherePatients.push(` p.geo_type = point `);
+      
+        if(ageRange){
+            wherePatients.push(` p.age_range = ${ageRange} `)
+        }
+      
+        if(gender){
+            wherePatients.push(`  p.gender = '${gender}' `)
+        }
+      
+        if(department){
+            wherePatients.push(` p.department_id = ${department} `)
+        }
+      
+        if(institution){
+            wherePatients.push(` p.institution_id = ${institution} `)
+        }
+      
+        if(startDate && endDate ){
+            wherePatients.push(` p.registered_at BETWEEN '${startDate}' AND '${endDate}' `);
+        }
+      
+        if(cie10){
+          wherePatients.push(`  d.cie10_code = '${cie10}' `)
+        }
+      
+        //TODO the query need to check it with the filters.
+        const query = 
+        `SELECT 
+          p.latitude,
+          p.longitude,
+          p.age, 
+          p.edad_raw,
+          p.cie10_code,
+          d.name,
+          p.registered_at,
+          p.gender
+        FROM 
+          patient p LEFT JOIN disease d ON d.id = p.disease_id
+        WHERE
+          ${wherePatients.join(' AND \n\t\t')}
+        ;`
+      
+        postg.querySlave(query, (error, results)=>{
+            if(error){
+                console.log('ERROR:',error);
+                return cb({
+                    statusCode: 500,
+                    code: 'UE',
+                    message: 'Unknow error'
+                });
+            }
+      
+            cb(null, {
+                statusCode: 200,
+                code: 'OK',
+                message: 'Successful',
+                data: results
+            })
+        });
+      }
+      
+    static insertPatientPoint(options, cb) {
+
+        let data = {
+            age: options.age,
+            cie10: options.cie10,
+            ageType: options.ageType,
+            registeredDate: options.registeredDate,
+            institution: options.institution,
+            deparment: options.department,
+            gender: options.gender,
+            etnia: options.etnia,
+            latitude: options.longitude,
+            longitude: options.latitude
+        };
+    
+    
+        const geofenceQuery =
+        `  SELECT 
+                ge.id as id,
+                ge.name as name
+            FROM 
+                healthmap.geofence ge 
+            WHERE 
+                ge.granularity_level = 7 AND
+                ST_Contains(ge.polygon, ST_GeomFromText('POINT(${data.longitude} ${data.latitude})')) = TRUE 
+            `
+        
+        async.waterfall([
+            (cb)=>{
+                Age.getAgeRanges((error, rangesData)=>{
+                    if(error){
+                        return cb(error);
+                    }
+                    return cb(null, rangesData.data.ranges);
+                });
+            },
+            (ranges, cb)=>{
+                Disease.getDiseasesRaw((error, diseases)=>{
+                    if(error){
+                        return cb(error);
+                    }
+                    return cb(null, ranges, diseases);
+                });
+            },
+            (ranges, diseases, cb) => {
+                postg.querySlave(geofenceQuery, (err, result) => {
+                    if (err){
+                        return cb(err);
+                    }
+                    if (result && result.length){
+                        data.geofenceId = result[0].id;
+                    } else {
+                        data.geofenceId = 1;
+                    }
+                    return cb(null, ranges, diseases);
+                })
+            },
+            (ranges, diseases, cb)=>{ //Anonimization
+        
+                const yearsRanges = ranges
+                    .filter((r)=>r.period_type==='años')
+        
+                const monthRanges = ranges
+                    .filter((r)=>r.period_type==='meses')   
+                
+                const age = parseInt(data["age"]);
+                const cie10 = data["cie10"];
+                const ageType = data["ageType"];
+    
+                const dia = diseases
+                    .find((y)=>y.cie10_code == cie10);
+    
+                const diseaseId = dia ? dia.id : -1;
+                
+                let ageId;
+                if (ageType){
+                    if (ageType === 'años'){
+                        ageId = 
+                        age === 0 ? 
+                        monthRanges[0] : 
+                        yearsRanges
+                            .find((y) => {
+                                return parseInt(y.start_age) <= age && parseInt(y.end_age) >= age
+                            });
+                    } else if (ageType === 'meses'){
+                        ageId = 
+                        monthRanges
+                            .find((y) => {
+                                return parseInt(y.start_age) <= age && parseInt(y.end_age) >= age
+                            });
+                    } else { // dias
+                        ageId = monthRanges[0];
+                    }
+                } else {
+                    ageId = 
+                        age === 0 ? 
+                        monthRanges[0] : 
+                        yearsRanges
+                            .find((y) => {
+                                return parseInt(y.start_age) <= age && parseInt(y.end_age) >= age
+                            });
+                }
+    
+                if (!ageId){
+                    console.log("BAD AGE");
+                }
+    
+                ageId = ageId ? ageId.id : 4;
+    
+                data.ageId = ageId;
+                data.diseaseId = diseaseId;
+        
+                return cb(null, data);
+            },
+            (item, cb)=>{
+        
+                const time = moment(new Date(item["registeredDate"])).format('YYYY-MM-DD HH:mm:ss');
+                
+                const options  = {
+                    patient: {
+                        cityId: 1,
+                        institutionId: item["institution"] ? item["institution"] : 1,
+                        department: item["department"] ? item["department"] : 1,
+                        gender: item["gender"] ? item["gender"] : 'N', 
+                        diseaseId: item.diseaseId,
+                        geofenceId: item.geofenceId,
+                        etnia: item["etnia"] ? item["etnia"] : 'DESCONOCIDA',
+                        rawAge: item["age"] ? item["age"] : -1,
+                        rawAgeType: item["ageType"] ? item["ageType"] : 'años',
+                        ageId: item.ageId,
+                        registeredDate: time,
+                        geo_type: 'point',
+                        latitude: item["latitude"],
+                        longitude: item["longitude"]
+                    }
+                }
+                if(item.geofenceId === -1 || !item.geofenceId){
+                return cback(null, options);
+                }
+                if(item.diseaseId === -1){
+                return cback(null, options);
+                }
+                if(item.ageId === -1 || !item.ageId){
+                return cback(null, options);
+                }
+                Patient.createPatient(options, (error, results)=>{
+                    if(error){
+                        console.log('ERROR:',error);
+                        return cb(null, []);
+                    }
+                    cb(null, results);
+                });
+            }
+        ], (error, results)=>{
+            if(error){
+                return cb(error);
+            }
+            cb(null, results)
+        });
+        
+    }
 }
 module.exports = Patient;

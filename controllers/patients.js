@@ -1,0 +1,112 @@
+const Express = require('express');
+const router = new Express.Router();
+//TODO: Pending to add a schema validator to validate the format that the data is sent.
+const Patient = require('../models/patient');
+const authAPI = require('../middlewares/auth');
+const langMiddleware = require('../middlewares/lang');
+
+
+router.get('/', authAPI, langMiddleware, (req, res) => {
+
+    const  { 
+        ageRange,
+        gender,
+        categoryGroup,
+        institution,
+        department,
+        startDate,
+        endDate
+    } = req.query;
+  
+
+    const options = {
+        ageRange,
+        gender,
+        cie10,
+        categoryGroup,
+        institution,
+        department,
+        startDate,
+        endDate
+    }
+
+    console.log('RANGE:', options);
+
+    Patient.getPatientsPoints(options,  (error, result) => {
+        if(error){
+
+            if(error.statusCode){
+                return res.status(error.statusCode).json({
+                    code: error.code,
+                    message: `${req.i18n.__(error.message)}`
+                });
+            }
+
+            return res.status(500).json({
+                code: 'UE',
+                message: `${req.i18n.__(error.message)}`
+            });
+            
+        }
+        res.status(result.statusCode).json({
+            code: result.code,
+            message: `${req.i18n.__(result.message)}`,
+            data: result.data
+        });
+    });
+});
+
+router.post('/', authAPI, langMiddleware, (req, res) => {
+
+    const  { 
+        age,
+        cie10,
+        ageType,
+        registeredDate,
+        institution,
+        deparment,
+        gender,
+        etnia,
+        latitude,
+        longitude,
+    } = req.body;
+  
+
+    const options = {
+        age,
+        cie10,
+        ageType,
+        registeredDate,
+        institution,
+        deparment,
+        gender,
+        etnia,
+        latitude,
+        longitude
+    }
+
+    Patient.insertPatientPoint(options,  (error, result) => {
+        if(error){
+
+            if(error.statusCode){
+                return res.status(error.statusCode).json({
+                    code: error.code,
+                    message: `${req.i18n.__(error.message)}`
+                });
+            }
+
+            return res.status(500).json({
+                code: 'UE',
+                message: `${req.i18n.__(error.message)}`
+            });
+            
+        }
+        res.status(200).json({
+            code: 'OK',
+            message: `PATIENT ADDED`
+        });
+    });
+});
+
+
+module.exports = router
