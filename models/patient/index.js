@@ -128,7 +128,7 @@ class Patient{
         const wherePatients = [];
       
         wherePatients.push(` p.enabled = TRUE `);
-        wherePatients.push(` p.geo_type = point `);
+        wherePatients.push(` p.geo_type = 'point' `);
       
         if(ageRange){
             wherePatients.push(` p.age_range = ${ageRange} `)
@@ -384,7 +384,7 @@ class Patient{
             integration_id IS NOT NULL and
             integration_id = '${integration_id}'
         ;`
-        
+
         postg.queryMaster(query, (error, result)=>{
             if(error){
                 console.log('ERROR:',error);
