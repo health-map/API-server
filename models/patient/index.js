@@ -242,8 +242,8 @@ class Patient{
                     if (err){
                         return cb(err);
                     }
-                    if (result && result.length){
-                        data.geofenceId = result[0].id;
+                    if (result && result.rows && result.rows.length){
+                        data.geofenceId = result.rows[0].id;
                     } else {
                         data.geofenceId = 1;
                     }
