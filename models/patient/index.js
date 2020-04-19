@@ -1,4 +1,5 @@
 const async = require('async');
+const moment = require('moment');
 const postg = require('../../db/postgre');
 const Age = require('./../age');
 const Disease = require('./../disease');
@@ -202,8 +203,8 @@ class Patient{
             deparment: options.department,
             gender: options.gender,
             etnia: options.etnia,
-            latitude: options.longitude,
-            longitude: options.latitude,
+            latitude: options.latitude,
+            longitude: options.longitude,
             cuarantine_status: options.cuarantine_status,
             integration_id: options.integration_id
         };
