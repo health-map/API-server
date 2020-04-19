@@ -186,7 +186,7 @@ class Patient{
                 statusCode: 200,
                 code: 'OK',
                 message: 'Successful',
-                data: results
+                data: results.rows
             })
         });
     }
