@@ -160,7 +160,7 @@ class Patient{
           p.longitude,
           p.age, 
           p.edad_raw,
-          p.cie10_code,
+          d.cie10_code,
           d.name,
           p.registered_at,
           p.gender,
