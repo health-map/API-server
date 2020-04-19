@@ -199,7 +199,7 @@ class Patient{
             ageType: options.ageType,
             registeredDate: options.registeredDate,
             institution: options.institution,
-            deparment: options.department,
+            department: options.department,
             gender: options.gender,
             etnia: options.etnia,
             latitude: options.latitude,
