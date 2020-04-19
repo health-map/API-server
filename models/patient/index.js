@@ -159,7 +159,6 @@ class Patient{
         `SELECT 
           p.latitude,
           p.longitude,
-          p.age, 
           p.edad_raw,
           d.cie10_code,
           d.name,
@@ -356,6 +355,48 @@ class Patient{
             cb(null, results)
         });
         
+    }
+
+    static editPatientPoint(options, cb) {
+        const {
+            latitude,
+            longitude,
+            cuarantine_status,
+            integration_id
+        } = options; 
+
+        let setConditions = [];
+
+        if (latitude && longitude){
+            setConditions.push( ` latitude = ${latitude} ` )
+            setConditions.push( ` longitude = ${longitude} ` )
+        }
+
+        if (cuarantine_status){
+            setConditions.push( ` cuarantine_status = '${cuarantine_status}' ` )
+        }
+
+        const query = 
+        `UPDATE healthmap.patient
+        SET 
+            ${setConditions.join(' , ')}
+        WHERE 
+            integration_id IS NOT NULL and
+            integration_id = '${integration_id}'
+        ;`
+        
+        postg.queryMaster(query, (error, result)=>{
+            if(error){
+                console.log('ERROR:',error);
+                return cb({
+                    statusCode: 500,
+                    code: 'UE',
+                    message: 'Unknow error'
+                });
+            }
+            cb(null, result);
+        }); 
+
     }
 }
 module.exports = Patient;

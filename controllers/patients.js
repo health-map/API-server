@@ -112,4 +112,52 @@ router.post('/', authAPI, langMiddleware, (req, res) => {
 });
 
 
+router.patch('/', authAPI, langMiddleware, (req, res) => {
+
+    const  { 
+        latitude,
+        longitude,
+        cuarantine_status,
+        integration_id
+    } = req.body;
+
+    if (!integration_id){
+        return res.status(412).json({
+            code: 'UE',
+            message: `Must send integration_id of the patient in your system`
+        });
+    }
+  
+
+    const options = {
+        latitude,
+        longitude,
+        cuarantine_status,
+        integration_id
+    }
+
+    Patient.editPatientPoint(options,  (error, result) => {
+        if(error){
+
+            if(error.statusCode){
+                return res.status(error.statusCode).json({
+                    code: error.code,
+                    message: `${req.i18n.__(error.message)}`
+                });
+            }
+
+            return res.status(500).json({
+                code: 'UE',
+                message: `${req.i18n.__(error.message)}`
+            });
+            
+        }
+        res.status(200).json({
+            code: 'OK',
+            message: `PATIENT SUCCESSFULLY EDITED`
+        });
+    });
+});
+
+
 module.exports = router
