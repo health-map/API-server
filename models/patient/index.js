@@ -25,7 +25,9 @@ class Patient{
             rawAgeType = 'N/A',
             latitude,
             longitude,
-            geo_type = 'geozone'
+            geo_type = 'geozone',
+            cuarantine_status,
+            integration_id
         } = patient;
 
         const values = [
@@ -44,7 +46,9 @@ class Patient{
             rawAgeType,
             latitude,
             longitude,
-            geo_type
+            geo_type,
+            cuarantine_status,
+            integration_id
         ]
 
         console.log('VALUES:',values);
@@ -68,7 +72,9 @@ class Patient{
             edad_raw_type,
             latitude,
             longitude,
-            geo_type
+            geo_type,
+            cuarantine_status,
+            integration_id
         )
         VALUES(
             $1,
@@ -86,7 +92,9 @@ class Patient{
             $13,
             $14,
             $15,
-            $16
+            $16,
+            $17,
+            $18
         ) RETURNING id `
         postg.queryMaster(query, values, (error, result)=>{
             if(error){
@@ -155,7 +163,9 @@ class Patient{
           p.cie10_code,
           d.name,
           p.registered_at,
-          p.gender
+          p.gender,
+          p.cuarantine_status,
+          p.integration_id
         FROM 
           patient p LEFT JOIN disease d ON d.id = p.disease_id
         WHERE
@@ -179,7 +189,7 @@ class Patient{
                 data: results
             })
         });
-      }
+    }
       
     static insertPatientPoint(options, cb) {
 
@@ -193,7 +203,9 @@ class Patient{
             gender: options.gender,
             etnia: options.etnia,
             latitude: options.longitude,
-            longitude: options.latitude
+            longitude: options.latitude,
+            cuarantine_status: options.cuarantine_status,
+            integration_id: options.integration_id
         };
     
     
@@ -314,7 +326,9 @@ class Patient{
                         registeredDate: time,
                         geo_type: 'point',
                         latitude: item["latitude"],
-                        longitude: item["longitude"]
+                        longitude: item["longitude"],
+                        cuarantine_status: item["cuarantine_status"],
+                        integration_id: item["integration_id"]
                     }
                 }
                 if(item.geofenceId === -1 || !item.geofenceId){

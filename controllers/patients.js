@@ -68,6 +68,8 @@ router.post('/', authAPI, langMiddleware, (req, res) => {
         etnia,
         latitude,
         longitude,
+        cuarantine_status,
+        integration_id
     } = req.body;
   
 
@@ -81,7 +83,9 @@ router.post('/', authAPI, langMiddleware, (req, res) => {
         gender,
         etnia,
         latitude,
-        longitude
+        longitude,
+        cuarantine_status,
+        integration_id
     }
 
     Patient.insertPatientPoint(options,  (error, result) => {
