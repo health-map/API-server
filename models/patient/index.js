@@ -318,18 +318,18 @@ class Patient{
                     }
                 }
                 if(item.geofenceId === -1 || !item.geofenceId){
-                return cback(null, options);
+                    return cb(new Error("Error loading geofence of point"));
                 }
                 if(item.diseaseId === -1){
-                return cback(null, options);
+                    return cb(new Error("Error loading CIE10 disease"));
                 }
                 if(item.ageId === -1 || !item.ageId){
-                return cback(null, options);
+                    return cb(new Error("Error loading age of patient"));
                 }
                 Patient.createPatient(options, (error, results)=>{
                     if(error){
                         console.log('ERROR:',error);
-                        return cb(null, []);
+                        return cb(error);
                     }
                     cb(null, results);
                 });

@@ -11,7 +11,7 @@ router.get('/', authAPI, langMiddleware, (req, res) => {
     const  { 
         ageRange,
         gender,
-        categoryGroup,
+        cie10,
         institution,
         department,
         startDate,
@@ -23,7 +23,6 @@ router.get('/', authAPI, langMiddleware, (req, res) => {
         ageRange,
         gender,
         cie10,
-        categoryGroup,
         institution,
         department,
         startDate,
