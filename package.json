@@ -20,7 +20,7 @@
     "express": "^4.17.1",
     "express-debug": "^1.1.1",
     "express-ejs-layouts": "^2.5.0",
-    "express-fileupload": "^1.1.5",
+    "express-fileupload": "^1.1.9",
     "express-session": "^1.16.2",
     "i18n-2": "^0.7.3",
     "js-combinatorics": "^0.5.4",
