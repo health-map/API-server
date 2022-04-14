@@ -6,7 +6,7 @@
   "dependencies": {
     "@types/bluebird": "^3.5.27",
     "@types/node": "^12.7.1",
-    "async": "^3.1.0",
+    "async": "^3.2.2",
     "basic-auth": "^2.0.1",
     "bunyan": "^1.8.12",
     "bunyan-format": "^0.2.1",
